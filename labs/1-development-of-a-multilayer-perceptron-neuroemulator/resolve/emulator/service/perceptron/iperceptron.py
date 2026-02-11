@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, List
-
+from typing import List
 
 
 class IPerceptron(ABC):
@@ -18,7 +17,7 @@ class IPerceptron(ABC):
     def set_layer_size(self, layer: int, new_wize:int): pass
 
     @abstractmethod
-    def get_activation_function(self, ): pass
+    def get_activation_function(self): pass
 
     @abstractmethod
-    def set_activation_function(self, new_function: Callable): pass
+    def set_activation_function(self, new_function): pass

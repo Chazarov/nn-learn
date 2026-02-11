@@ -1,10 +1,11 @@
 from pathlib import Path
-from typing import Callable, List
+from typing import List
 import numpy.typing as npt
 import numpy as np
 
 from ...exceptions.argument_exception import ArgumentException
 from ...logger.log import logger
+from ..activation.iactivation import IActivation
 from .iperceptron import IPerceptron
 
 
@@ -12,9 +13,9 @@ class Perceptron(IPerceptron):
 
     __weights: List[npt.NDArray[np.float64]]
     __layers_size: List[int]
-    __activation_function: Callable
+    __activation_function: IActivation
 
-    def __init__(self, layers_size: List[int], activate: Callable):
+    def __init__(self, layers_size: List[int], activate: IActivation):
         self.__layers_size = layers_size.copy()
         self.__activation_function = activate
         self.__weights = []
@@ -44,11 +45,11 @@ class Perceptron(IPerceptron):
             raise ArgumentException("Incorrect layer index value")
         self.__layers_size[layer] = new_size
 
-    def get_activation_function(self):
+    def get_activation_function(self) -> IActivation:
         return self.__activation_function
 
-    def set_activation_function(self, new_function: Callable):
+    def set_activation_function(self, new_function: IActivation):
         self.__set_activation_function(new_function)
 
-    def __set_activation_function(self, new_function: Callable):
+    def __set_activation_function(self, new_function: IActivation):
         self.__activation_function = new_function
