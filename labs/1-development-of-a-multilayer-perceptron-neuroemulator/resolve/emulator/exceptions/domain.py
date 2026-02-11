@@ -2,3 +2,4 @@
 
 class DomainException(Exception):
     pass
+
