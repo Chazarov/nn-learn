@@ -1,3 +1,4 @@
+from random import randint
 from typing import List
 from config import config
 
