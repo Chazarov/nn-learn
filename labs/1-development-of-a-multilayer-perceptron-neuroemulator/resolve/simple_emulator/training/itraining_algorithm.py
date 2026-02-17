@@ -9,7 +9,7 @@ from ..loss import ILoss
 class ITrainingAlgorithm(ABC):
     
     @abstractmethod
-    def training_iteration(self, inputs: List[float], outputs: List[float]): pass
+    def training_iteration(self, inputs: List[float], outputs: List[float], expected: List[float], weighted_sums_output: List[float]): pass
 
     @abstractmethod
     def get_looses(self): pass
