@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import math
 
 
 class IActivation(ABC):
@@ -34,3 +35,19 @@ class Rellu(IActivation):
             value: взвешенная сумма (NET вход)
         """
         return 1.0 if value > 0 else 0.0
+
+
+class Sigmoid(IActivation):
+    def perform(self, value: float) -> float:
+        """Sigmoid: f(x) = 1 / (1 + e^(-x))"""
+        return 1.0 / (1.0 + math.exp(-value))
+
+    def derivative(self, value: float) -> float:
+        """
+        Производная Sigmoid: f'(x) = f(x) · (1 - f(x))
+
+        Args:
+            value: взвешенная сумма (NET вход)
+        """
+        s = self.perform(value)
+        return s * (1.0 - s)

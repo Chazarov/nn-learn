@@ -3,32 +3,33 @@ from typing import List
 
 
 from training.itraining_algorithm import ITrainingAlgorithm
-from .update_weights_algorithm import IUpdatingWeightsAlgorithm
 from ..loss import ILoss
 from ..activation import IActivation
-from config import config
-from log import logger
 from mathh import mv
-from exceptions.argument_exception import ArgumentException
+
+
+# from config import config
+# from log import logger
+# from exceptions.argument_exception import ArgumentException
 
 
 
 class BackPropagation(ITrainingAlgorithm):
 
-    updw_alg: IUpdatingWeightsAlgorithm
     perceptrone: List[List[List[float]]]
     loss: ILoss
     activation: IActivation
+    learning_rate: float
 
-    def __init__(self, loss: ILoss, update_weights_algorithm: IUpdatingWeightsAlgorithm, 
+    def __init__(self, loss: ILoss, learning_rate:float, 
                  perceptrone: List[List[List[float]]], activation: IActivation):
-        self.updw_alg = update_weights_algorithm
+        self.learning_rate = learning_rate
         self.perceptrone = perceptrone
         self.loss = loss
         self.activation = activation
 
-    def training_iteration(self, inputs: List[float], outputs: List[float], expected: List[float],
-                          weighted_sums_output: List[float]):
+    def training_iteration_calculate(self, inputs: List[float], outputs: List[float], expected: List[float],
+                          weighted_sums_output: List[List[float]]):
         """
         Одна итерация обучения.
         
@@ -36,7 +37,7 @@ class BackPropagation(ITrainingAlgorithm):
             inputs: входные значения
             outputs: выходы нейронов выходного слоя (y_j^Q)
             expected: желаемые значения (d_j)
-            weighted_sums_output: взвешенные суммы выходного слоя до активации (s_j^Q). Необходимы что бы оптимизировать алгоритм
+            weighted_sums_output: взвешенные суммы слоев до активации (s_j^Q). Необходимы что бы оптимизировать алгоритм
             и не вычислять значение сумматора нейрона до функции активации
         """
         """
@@ -55,6 +56,7 @@ class BackPropagation(ITrainingAlgorithm):
         f'(s_j^Q) - производная функции активации
         """
         
+        
         output_local_errors: List[float] = []
         
         for j in range(len(outputs)):
@@ -63,14 +65,18 @@ class BackPropagation(ITrainingAlgorithm):
             
             d_j = expected[j]
             
-            s_j = weighted_sums_output[j]
+            s_j = weighted_sums_output[-1][j]
             
             
             derivative = self.activation.derivative(s_j)
             local_error = (y_j - d_j) * derivative
             output_local_errors.append(local_error)
 
-        prev_local_errors = output_local_errors
+
+        num_layers = len(self.perceptrone)
+        local_errors: List[List[float]] = [[] for _ in range(num_layers)]
+
+        local_errors[-1] += output_local_errors
 
         # ШАГ 4: Рассчитать локальные ошибки для всех скрытых слоев по формуле (1) (от последнего к первому)
         """
@@ -83,21 +89,48 @@ class BackPropagation(ITrainingAlgorithm):
         """
 
 
-        num_layers = len(self.perceptrone)  # общее количество слоев (включая выходной)
-        q_local_errors = None
 
-        for q in range(num_layers - 2, -1, -1):
-            first_step = mv.m_v_mtpc(mv.t_mtx(self.perceptrone[q+1]), prev_local_errors) ## first-step
-            q_local_errors = mv.v_v_elementwise(first_step, ???) ## second-step TODO: умножить ПОЭЛЕМЕНТНО на ВЕКТОРЫ производных функции активации слоя q.
+        for q in range(num_layers - 2, -1, -1): # -2 так как выходной слой не учитывается в предыдущем шагеы
+            first_step = mv.m_v_mtpc(mv.t_mtx(self.perceptrone[q+1]), local_errors[q+1]) ## first-step
 
-            prev_local_errors = q_local_errors
+            derivatives = [self.activation.derivative(x) for x in weighted_sums_output[q]]
+            q_local_errors = mv.v_v_elementwise(first_step, derivatives)
+
+            local_errors[q] += q_local_errors
     
 
+
+        # ШАГ 5: Рассчитать для всех слоев по формуле 3 или 4 значение изменения весов. (дельта корректировку)
+        #  Обновление весов: Δw_ij^q = -η * δ_j^q * y_i^(q-1)
+        # где Δw_ij^q - изменение веса связи от i-го нейрона слоя (q - 1) в j-му нейрону слоя q
+        # η - скорость обучения, δ_j^q - локальная ошибка, 
+        # y_i^(q-1) - вход с прошлого слоя
+
+
+        adjustments: List[List[List[float]]] = \
+        [[[0.0 for _ in range(len(self.perceptrone[q][i]))] for i in range(len(self.perceptrone[q]))]
+        for q in range(num_layers)]
+
+        for q in range(num_layers - 1, -1, -1): # а здесь мы итерируемся по всем слоям, включая выходной 
+            for i in range(len(self.perceptrone[q])): # номер строки нейрон - получатель
+                for j in range(len(self.perceptrone[q][i])): #номер столбца нейрон - источник
+                    if q == 0:
+                        y_prev = inputs[j]
+                    else:
+                        y_prev = self.activation.perform(weighted_sums_output[q-1][j])
+                    adjust = (-self.learning_rate) * local_errors[q][i] * y_prev
+                    adjustments[q][i][j] = adjust
+
+        return adjustments
         
 
     def get_perceptrone(self): return self.perceptrone
 
     def get_loos_function(self): return self.loss
+
+    def get_looses(self): pass
+        
+    def get_output_loss(self): pass
 
 
     
