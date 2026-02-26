@@ -40,3 +40,9 @@ htmlcov/
 Thumbs.db
 
 *.~lock.*
+
+# Data directories — ignore all except samples
+labs/**/data/learn/*
+!labs/**/data/learn/sample_Iris.csv
+labs/**/data/weights/*
+!labs/**/data/weights/sample.json
