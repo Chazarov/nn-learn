@@ -5,7 +5,7 @@ import random
 import uuid
 from typing import Any, Dict, List, cast
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Body, File, HTTPException, UploadFile
 
 from activation import ActivationType, ACTIVATIONS
 from forwrdpropagation.forward_propagation import forward_propogation
@@ -59,11 +59,11 @@ async def upload_csv(file: UploadFile = File(..., description="CSV training samp
 
 @router.post("/learn/")
 def learn_perceptrone(
-    file_id: str,
-    hidden_layers_architecture: List[int],
-    activation_type: ActivationType,
-    epochs: int,
-    learning_rate: float,
+    file_id: str = Body(...),
+    hidden_layers_architecture: List[int] = Body(...),
+    activation_type: ActivationType = Body(...),
+    epochs: int = Body(...),
+    learning_rate: float = Body(...),
 ) -> Dict[str, Any]:
 
     path = os.path.join(DATA_LEARN, f"{file_id}.csv")
@@ -99,11 +99,11 @@ def learn_perceptrone(
     return {"perceptrone_id": perceptron_id}
 
 
-@router.get("/get_answer")
+@router.post("/get_answer")
 def get_answer(
-    perceptrone_id: str,
-    input_vector: List[float],
-    activation_type: ActivationType,
+    perceptrone_id: str = Body(...),
+    input_vector: List[float] = Body(...),
+    activation_type: ActivationType = Body(...),
 ) -> Dict[str, Any]:
     path = os.path.join(DATA_WEIGHTS, f"{perceptrone_id}.json")
     if not os.path.exists(path):
