@@ -1,40 +1,54 @@
-from typing import List
+from typing import List, Tuple
 
 from log import logger
 from activation import IActivation
-from config import config
 
 
-def check_forward_propagation_parametrs(inputs: List[float], perceptron: List[List[List[float]]]):
-    if(len(inputs) != config.INPUT_LAYER_SIZE):
-        e_str = "incorrect size of the array of input values"
+def forward_propogation(
+    inputs: List[float],
+    perceptron: List[List[List[float]]],
+    activation: IActivation,
+) -> Tuple[List[float], List[List[float]]]:
+    """
+    Прямое распространение сигнала через многослойный перцептрон.
+
+    Args:
+        inputs: входные значения (x)
+        perceptron: весовые матрицы слоёв.
+            perceptron[q][j][k] — вес от k-го нейрона слоя (q-1) к j-му нейрону слоя q.
+        activation: функция активации
+
+    Returns:
+        (outputs, weighted_sums_output)
+        outputs — выходы последнего слоя после активации
+        weighted_sums_output — взвешенные суммы каждого слоя до активации,
+            weighted_sums_output[q][j] = s_j^q
+    """
+    if not perceptron:
+        raise RuntimeError("perceptron is empty")
+    if len(inputs) != len(perceptron[0][0]):
+        e_str = (
+            f"incorrect size of inputs: expected {len(perceptron[0][0])}, got {len(inputs)}"
+        )
         logger.error(e_str)
         raise RuntimeError(e_str)
-    
-
-def forward_propogation(inputs: List[float], perceptron: List[List[List[float]]], activation:IActivation):
-    check_forward_propagation_parametrs(inputs, perceptron)
 
     current_activations: List[float] = inputs
-    new_activations: List[float] = list()
-    sourse_layer_size = config.INPUT_LAYER_SIZE
-    target_layer_size = config.HIDDEN_LAYER_SIZE
-    for i in range(config.LAYERS_COUNT):
+    weighted_sums_output: List[List[float]] = []
 
-        
-        if(i == config.LAYERS_COUNT -1):
-            sourse_layer_size = config.HIDDEN_LAYER_SIZE
-            target_layer_size = config.OUTPUT_LAYER_SIZE
-        elif(i == 1):
-            sourse_layer_size = target_layer_size = config.HIDDEN_LAYER_SIZE
+    for q in range(len(perceptron)):
+        layer_sums: List[float] = []
+        layer_activations: List[float] = []
 
+        for j in range(len(perceptron[q])):
+            s_j = 0.0
+            for k in range(len(perceptron[q][j])):
+                s_j += perceptron[q][j][k] * current_activations[k]
+            layer_sums.append(s_j)
+            layer_activations.append(activation.perform(s_j))
 
-        for j in range(target_layer_size):
-            current_summ = 0
-            for k in range(sourse_layer_size):
-                current_summ += current_activations[k]*perceptron[i][j][k] # perceptron [i][j] - не уверен в порядке индексов
-            new_activations.append(activation.perform(current_summ))
-        current_activations = new_activations
+        weighted_sums_output.append(layer_sums)
+        current_activations = layer_activations
 
-    return current_activations
+    return current_activations, weighted_sums_output
         
