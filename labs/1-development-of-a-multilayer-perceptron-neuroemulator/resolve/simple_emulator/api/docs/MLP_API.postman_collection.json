@@ -38,34 +38,40 @@
     {
       "name": "Learn",
       "request": {
-        "method": "GET",
-        "url": {
-          "raw": "{{base_url}}/learn/?file_id={{file_id}}&hidden_layers_architecture={{hidden_layer_size}}&activation_type={{activation_type}}&epochs={{epochs}}&learning_rate={{learning_rate}}",
-          "host": ["{{base_url}}"],
-          "path": ["learn", ""],
-          "query": [
-            { "key": "file_id", "value": "{{file_id}}" },
-            { "key": "hidden_layers_architecture", "value": "{{hidden_layer_size}}" },
-            { "key": "activation_type", "value": "{{activation_type}}" },
-            { "key": "epochs", "value": "{{epochs}}" },
-            { "key": "learning_rate", "value": "{{learning_rate}}" }
-          ]
+        "method": "POST",
+        "url": "{{base_url}}/learn/",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": { "language": "json" }
+          },
+          "raw": "{\n  \"file_id\": \"{{file_id}}\",\n  \"hidden_layers_architecture\": [{{hidden_layer_size}}],\n  \"activation_type\": \"{{activation_type}}\",\n  \"epochs\": {{epochs}},\n  \"learning_rate\": {{learning_rate}}\n}"
         }
       }
     },
     {
       "name": "Get Answer",
       "request": {
-        "method": "GET",
-        "url": {
-          "raw": "{{base_url}}/get_answer?perceptrone_id={{perceptrone_id}}&input_vector={{input_vector}}&activation_type={{activation_type}}",
-          "host": ["{{base_url}}"],
-          "path": ["get_answer"],
-          "query": [
-            { "key": "perceptrone_id", "value": "{{perceptrone_id}}" },
-            { "key": "input_vector", "value": "{{input_vector}}" },
-            { "key": "activation_type", "value": "{{activation_type}}" }
-          ]
+        "method": "POST",
+        "url": "{{base_url}}/get_answer",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": { "language": "json" }
+          },
+          "raw": "{\n  \"perceptrone_id\": \"{{perceptrone_id}}\",\n  \"input_vector\": [{{input_vector}}],\n  \"activation_type\": \"{{activation_type}}\"\n}"
         }
       }
     },

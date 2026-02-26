@@ -57,7 +57,7 @@ async def upload_csv(file: UploadFile = File(..., description="CSV training samp
     return {"file_id": file_id}
 
 
-@router.get("/learn/")
+@router.post("/learn/")
 def learn_perceptrone(
     file_id: str,
     hidden_layers_architecture: List[int],
