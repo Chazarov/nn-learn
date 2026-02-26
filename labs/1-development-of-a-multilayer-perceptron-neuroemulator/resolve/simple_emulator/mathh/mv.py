@@ -1,4 +1,6 @@
-from typing import List
+from typing import List, Tuple
+from random import uniform
+
 
 from exceptions.argument_exception import ArgumentException
 from log import logger
@@ -89,3 +91,45 @@ def t_mtx(matrix: List[List[float]]) -> List[List[float]]:
     
     return result
 
+
+
+def init_perceptrone(architecture: List[int]) -> List[List[List[float]]]:
+    perceptron:List[List[List[float]]] = list()
+    for i in range(len(perceptron)):
+        n_out = architecture[i+1]
+        n_in = architecture[i]
+        perceptron.append(get_random_matrix(n_out, n_in))
+    return perceptron
+
+
+
+def get_random_matrix(n_out: int, n_in: int) -> List[List[float]]:
+    return [[uniform(-1, 1) for _ in range(n_in)] for _ in range(n_out)]
+
+
+Sample = Tuple[List[float], List[float]]
+# Where is x - vector of signs, y - class mark
+
+def normalize(data: List[Sample]) -> Tuple[List[Sample], List[float], List[float]]:
+    n: int = len(data[0][0])
+    mins: List[float] = [min(r[0][i] for r in data) for i in range(n)]
+    maxs: List[float] = [max(r[0][i] for r in data) for i in range(n)]
+    normed: List[Sample] = [
+        ([(x[i] - mins[i]) / (maxs[i] - mins[i]) for i in range(n)], y)
+        for x, y in data
+    ]
+
+    # normalized data in 0 - 1 range. 
+    # mins - minimal values for signs.
+    # If  there were 7 signs, then the lengths of the mins and maxs arrays will be 7.
+    return normed, mins, maxs
+    
+
+def apply_adjustments(
+    perceptron: List[List[List[float]]],
+    adjustments: List[List[List[float]]],
+) -> None:
+    for q in range(len(perceptron)):
+        for i in range(len(perceptron[q])):
+            for j in range(len(perceptron[q][i])):
+                perceptron[q][i][j] += adjustments[q][i][j]

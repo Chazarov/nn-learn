@@ -1,5 +1,15 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 import math
+from typing import Any, Dict
+
+
+
+class ActivationType(str, Enum):  # str для JSON-сериализации
+    RELLU = "RELLU"
+    SIGMOID = "SIGMOID"
+
+
 
 
 class IActivation(ABC):
@@ -21,6 +31,9 @@ class IActivation(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_type(self)-> str: pass
+
 
 class Rellu(IActivation):
     def perform(self, value: float) -> float:
@@ -35,6 +48,9 @@ class Rellu(IActivation):
             value: взвешенная сумма (NET вход)
         """
         return 1.0 if value > 0 else 0.0
+    
+    def get_type(self) -> str:
+        return ActivationType.RELLU
 
 
 class Sigmoid(IActivation):
@@ -51,3 +67,12 @@ class Sigmoid(IActivation):
         """
         s = self.perform(value)
         return s * (1.0 - s)
+    
+    def get_type(self) -> str:
+        return ActivationType.SIGMOID
+    
+
+ACTIVATIONS:Dict[str, Any] = {
+    ActivationType.RELLU: Rellu,
+    ActivationType.SIGMOID: Sigmoid
+}
