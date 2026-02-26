@@ -1,14 +1,13 @@
 from typing import Any, List
 
-from .backpropagation import BackPropagation
-from ..activation import Rellu
-from ..loss import MSE
-from ..exceptions.test_exception import TestException
-from ..log import logger
+from training.backpropagation import BackPropagation
+from activation import Rellu
+from exceptions.test_exception import TestException
+from log import logger
+from loss import MSE
 
 
-
-def test_iteration():
+def test_backpropagation_iteration():
     """
     Checking the calculation of weight changes after the 
     backpropagation training iteration

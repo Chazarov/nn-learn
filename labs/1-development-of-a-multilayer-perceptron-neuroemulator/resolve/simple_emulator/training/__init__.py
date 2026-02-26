@@ -1,1 +1,1 @@
-from .backpropagation import back_propagation
+from training.backpropagation import BackPropagation # type: ignore[unused-variable]

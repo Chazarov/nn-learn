@@ -1,4 +1,4 @@
-from .domain import DomainException
+from exceptions.domain import DomainException
 
 
 class ArgumentException(DomainException):

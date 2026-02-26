@@ -3,8 +3,8 @@ from typing import List
 
 
 from training.itraining_algorithm import ITrainingAlgorithm
-from ..loss import ILoss
-from ..activation import IActivation
+from loss import ILoss
+from activation import IActivation
 from mathh import mv
 
 

@@ -1,6 +1,6 @@
 from random import randint
 from typing import List
-from config import config
+from .config import config
 
 
 
@@ -25,6 +25,6 @@ def get_randoom_matrix(n: int, m:int):
     :param m: lines
     :type m: int
     """
-    return (randint(100, -100)/100 for i in range(m) for l in range(n))
+    return [[randint(100, -100)/100 for _1 in range(m)] for _ in range(n)]
 
 

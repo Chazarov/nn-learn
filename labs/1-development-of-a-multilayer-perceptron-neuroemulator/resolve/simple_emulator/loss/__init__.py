@@ -1,1 +1,1 @@
-from .loss import ILoss , MSE # type: ignore[unused-variable]
+from loss.loss import ILoss , MSE # type: ignore[unused-variable]

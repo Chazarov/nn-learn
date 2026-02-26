@@ -1,7 +1,7 @@
 from typing import List
 
 from log import logger
-from activation import IActivation, Rellu
+from activation import IActivation
 from config import config
 
 
@@ -13,7 +13,7 @@ def check_forward_propagation_parametrs(inputs: List[float], perceptron: List[Li
     
 
 def forward_propogation(inputs: List[float], perceptron: List[List[List[float]]], activation:IActivation):
-    check_forward_propagation_parametrs(inputs, perceptron, activation)
+    check_forward_propagation_parametrs(inputs, perceptron)
 
     current_activations: List[float] = inputs
     new_activations: List[float] = list()
