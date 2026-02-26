@@ -1,17 +1,10 @@
-from typing import List
+import uvicorn
+from fastapi import FastAPI
 
-# from log import logger
-# from activation import IActivation, Rellu
-# from config import config
+from api.handlers import router
 
+app = FastAPI(title="Multilayer Perceptron API")
+app.include_router(router)
 
-
-
-
-
-perceptron: List[List[List[float]]] = list()
-
-
-
-
-
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

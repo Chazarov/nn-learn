@@ -1,0 +1,87 @@
+{
+  "info": {
+    "name": "Multilayer Perceptron API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api"
+    },
+    {
+      "key": "file_id",
+      "value": ""
+    },
+    {
+      "key": "perceptrone_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Upload CSV",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/upload/csv",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "{{csv_file_path}}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Learn",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/learn/?file_id={{file_id}}&hidden_layers_architecture={{hidden_layer_size}}&activation_type={{activation_type}}&epochs={{epochs}}&learning_rate={{learning_rate}}",
+          "host": ["{{base_url}}"],
+          "path": ["learn", ""],
+          "query": [
+            { "key": "file_id", "value": "{{file_id}}" },
+            { "key": "hidden_layers_architecture", "value": "{{hidden_layer_size}}" },
+            { "key": "activation_type", "value": "{{activation_type}}" },
+            { "key": "epochs", "value": "{{epochs}}" },
+            { "key": "learning_rate", "value": "{{learning_rate}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Answer",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/get_answer?perceptrone_id={{perceptrone_id}}&input_vector={{input_vector}}&activation_type={{activation_type}}",
+          "host": ["{{base_url}}"],
+          "path": ["get_answer"],
+          "query": [
+            { "key": "perceptrone_id", "value": "{{perceptrone_id}}" },
+            { "key": "input_vector", "value": "{{input_vector}}" },
+            { "key": "activation_type", "value": "{{activation_type}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get All Files",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/files"
+      }
+    },
+    {
+      "name": "Get All Weights",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/weights"
+      }
+    }
+  ]
+}

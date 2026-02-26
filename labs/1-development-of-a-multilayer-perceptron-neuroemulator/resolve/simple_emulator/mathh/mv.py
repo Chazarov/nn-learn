@@ -94,10 +94,10 @@ def t_mtx(matrix: List[List[float]]) -> List[List[float]]:
 
 
 def init_perceptrone(architecture: List[int]) -> List[List[List[float]]]:
-    perceptron:List[List[List[float]]] = list()
-    for i in range(len(perceptron)):
-        n_out = architecture[i+1]
+    perceptron: List[List[List[float]]] = list()
+    for i in range(len(architecture) - 1):
         n_in = architecture[i]
+        n_out = architecture[i + 1]
         perceptron.append(get_random_matrix(n_out, n_in))
     return perceptron
 
