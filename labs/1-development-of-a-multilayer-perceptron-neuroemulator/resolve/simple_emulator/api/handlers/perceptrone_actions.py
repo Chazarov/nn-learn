@@ -5,19 +5,22 @@ import random
 import uuid
 from typing import Any, Dict, List, cast
 
-from fastapi import APIRouter, Body, File, HTTPException, UploadFile
+from fastapi import APIRouter, Body, HTTPException
 
 from activation import ActivationType, ACTIVATIONS
 from forwrdpropagation.forward_propagation import forward_propogation
 from loss import MSE
-from mathh.mv import Sample, apply_adjustments, init_perceptrone, normalize
+from mathh.mv import Sample, apply_adjustments, init_perceptrone as build_perceptrone, normalize
 from training.backpropagation import BackPropagation
+from repository.image_repository import ImageRepository
+from visualisation.visualisation import get_visualisation, ColorTheme
 
-router = APIRouter(prefix="/api", tags=["API"])
+router = APIRouter()
 
-DATA_LEARN = "data/learn"
 DATA_WEIGHTS = "data/weights"
+DATA_LEARN = "data/learn"
 
+_images_repository = ImageRepository()
 
 def _load_csv(path: str) -> tuple[List[Sample], List[str]]:
     rows: List[Sample] = []
@@ -42,30 +45,11 @@ def _load_csv(path: str) -> tuple[List[Sample], List[str]]:
     return rows, classes
 
 
-@router.post("/upload/csv")
-async def upload_csv(file: UploadFile = File(..., description="CSV training sample")) -> Dict[str, Any]:
-    if not file.filename or not file.filename.endswith(".csv"):
-        raise HTTPException(400, "Only CSV files are accepted")
-
-    file_id = str(uuid.uuid4())
-    dest = os.path.join(DATA_LEARN, f"{file_id}.csv")
-    os.makedirs(DATA_LEARN, exist_ok=True)
-    content = await file.read()
-    with open(dest, "wb") as f:
-        f.write(content)
-
-    return {"file_id": file_id}
-
-
-@router.post("/learn/")
-def learn_perceptrone(
+@router.post("/init")
+def init_new_perceptrone(
     file_id: str = Body(...),
     hidden_layers_architecture: List[int] = Body(...),
-    activation_type: ActivationType = Body(...),
-    epochs: int = Body(...),
-    learning_rate: float = Body(...),
 ) -> Dict[str, Any]:
-
     path = os.path.join(DATA_LEARN, f"{file_id}.csv")
     if not os.path.exists(path):
         raise HTTPException(404, f"File {file_id} not found")
@@ -77,7 +61,52 @@ def learn_perceptrone(
 
     architecture: List[int] = [input_layer_size] + hidden_layers_architecture + [output_layer_size]
 
-    perceptron = init_perceptrone(architecture)
+    perceptron: List[List[List[float]]] = build_perceptrone(architecture)
+
+    _, mins, maxs = normalize(raw_data)
+
+    perceptron_id: str = str(uuid.uuid4())
+
+    img = get_visualisation(perceptron, ColorTheme.DARK)
+
+    image_id = _images_repository.save_image(perceptron_id, img)
+
+    os.makedirs(DATA_WEIGHTS, exist_ok=True)
+    with open(os.path.join(DATA_WEIGHTS, f"{perceptron_id}.json"), "w") as f:
+        json.dump({"weights": perceptron, "mins": mins, "maxs": maxs, "classes": classes}, f, ensure_ascii=False, indent=4)
+
+    return {
+        "perceptrone_id": perceptron_id,
+        "image_id": image_id,
+    }
+
+
+@router.post("/learn/")
+def learn_perceptrone(
+    file_id: str = Body(...),
+    perceptrone_id: str = Body(...),
+    activation_type: ActivationType = Body(...),
+    epochs: int = Body(...),
+    learning_rate: float = Body(...),
+) -> Dict[str, Any]:
+
+    path = os.path.join(DATA_LEARN, f"{file_id}.csv")
+    if not os.path.exists(path):
+        raise HTTPException(404, f"File {file_id} not found")
+
+    raw_data, classes = _load_csv(path)
+
+
+    weights_path: str = os.path.join(DATA_WEIGHTS, f"{perceptrone_id}.json")
+    if not os.path.exists(weights_path):
+        raise HTTPException(404, f"Perceptrone {perceptrone_id} not found")
+
+    with open(weights_path) as wf:
+        saved: Any = json.load(wf)
+
+    perceptron: List[List[List[float]]] = cast(List[List[List[float]]], saved["weights"])
+    classes: List[str] = cast(List[str], saved["classes"])
+
     activation = ACTIVATIONS[activation_type]()
     bp = BackPropagation(MSE(), learning_rate, perceptron, activation)
 
@@ -91,12 +120,18 @@ def learn_perceptrone(
             adjustments = bp.training_iteration_calculate(x, outputs, y, weighted_sums)
             apply_adjustments(perceptron, adjustments)
 
-    perceptron_id = str(uuid.uuid4())
+    img = get_visualisation(perceptron, ColorTheme.DARK)
+
+    image_id = _images_repository.save_image(perceptrone_id, img)
+
     os.makedirs(DATA_WEIGHTS, exist_ok=True)
-    with open(os.path.join(DATA_WEIGHTS, f"{perceptron_id}.json"), "w") as f:
+    with open(os.path.join(DATA_WEIGHTS, f"{perceptrone_id}.json"), "w") as f:
         json.dump({"weights": perceptron, "mins": mins, "maxs": maxs, "classes": classes}, f, ensure_ascii=False, indent=4)
 
-    return {"perceptrone_id": perceptron_id}
+    return {
+            "perceptrone_id": perceptrone_id,
+            "image_id": image_id,
+            }
 
 
 @router.post("/get_answer")
@@ -124,16 +159,12 @@ def get_answer(
     predicted: str = classes[output_vector.index(max(output_vector))]
     confidences: Dict[str, float] = {classes[i]: round(output_vector[i], 4) for i in range(len(classes))}
 
-    return {"predicted": predicted, "confidences": confidences, "output": output_vector}
-
-
-@router.get("/files")
-async def get_all_samples() -> Dict[str, Any]:
-    os.makedirs(DATA_LEARN, exist_ok=True)
-    file_names = [n for n in os.listdir(DATA_LEARN) if n.endswith(".csv")]
     return {
-        "files": [{"id": n.replace(".csv", ""), "name": n} for n in file_names]
-    }
+                "predicted": predicted, 
+                "confidences": confidences, 
+                "output": output_vector
+            }
+
 
 
 @router.get("/weights")
@@ -141,5 +172,5 @@ async def get_all_weights() -> Dict[str, Any]:
     os.makedirs(DATA_WEIGHTS, exist_ok=True)
     file_names = [n for n in os.listdir(DATA_WEIGHTS) if n.endswith(".json")]
     return {
-        "files": [{"id": n.replace(".json", ""), "name": n} for n in file_names]
+        "files": [{"id": n.replace(".json", ""), "name": n, "object_type":"file_json"} for n in file_names]
     }

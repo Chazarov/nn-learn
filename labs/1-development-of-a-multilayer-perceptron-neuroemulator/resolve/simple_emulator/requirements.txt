@@ -2,4 +2,5 @@ pytest
 fastapi
 loguru
 uvicorn
+opencv-python-headless
 python-multipart

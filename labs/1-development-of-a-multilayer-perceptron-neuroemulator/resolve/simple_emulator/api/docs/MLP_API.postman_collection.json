@@ -4,90 +4,106 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {
-      "key": "base_url",
-      "value": "http://localhost:8000/api"
-    },
-    {
-      "key": "file_id",
-      "value": ""
-    },
-    {
-      "key": "perceptrone_id",
-      "value": ""
-    }
+    { "key": "base_url", "value": "http://localhost:8000/api" },
+    { "key": "file_id", "value": "" },
+    { "key": "perceptrone_id", "value": "" },
+    { "key": "image_id", "value": "" }
   ],
   "item": [
     {
-      "name": "Upload CSV",
-      "request": {
-        "method": "POST",
-        "url": "{{base_url}}/upload/csv",
-        "body": {
-          "mode": "formdata",
-          "formdata": [
-            {
-              "key": "file",
-              "type": "file",
-              "src": "{{csv_file_path}}"
+      "name": "CSV",
+      "item": [
+        {
+          "name": "Upload CSV",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/csv/upload",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" }
+              ]
             }
-          ]
-        }
-      }
-    },
-    {
-      "name": "Learn",
-      "request": {
-        "method": "POST",
-        "url": "{{base_url}}/learn/",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
           }
-        ],
-        "body": {
-          "mode": "raw",
-          "options": {
-            "raw": { "language": "json" }
-          },
-          "raw": "{\n  \"file_id\": \"{{file_id}}\",\n  \"hidden_layers_architecture\": [{{hidden_layer_size}}],\n  \"activation_type\": \"{{activation_type}}\",\n  \"epochs\": {{epochs}},\n  \"learning_rate\": {{learning_rate}}\n}"
-        }
-      }
-    },
-    {
-      "name": "Get Answer",
-      "request": {
-        "method": "POST",
-        "url": "{{base_url}}/get_answer",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
+        },
+        {
+          "name": "Get All CSV Files",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/csv/"
           }
-        ],
-        "body": {
-          "mode": "raw",
-          "options": {
-            "raw": { "language": "json" }
-          },
-          "raw": "{\n  \"perceptrone_id\": \"{{perceptrone_id}}\",\n  \"input_vector\": [{{input_vector}}],\n  \"activation_type\": \"{{activation_type}}\"\n}"
         }
-      }
+      ]
     },
     {
-      "name": "Get All Files",
-      "request": {
-        "method": "GET",
-        "url": "{{base_url}}/files"
-      }
+      "name": "Actions",
+      "item": [
+        {
+          "name": "Init Perceptrone",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/actions/init",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"file_id\": \"{{file_id}}\",\n  \"hidden_layers_architecture\": [6]\n}"
+            }
+          }
+        },
+        {
+          "name": "Learn",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/actions/learn/",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"file_id\": \"{{file_id}}\",\n  \"perceptrone_id\": \"{{perceptrone_id}}\",\n  \"activation_type\": \"RELLU\",\n  \"epochs\": 300,\n  \"learning_rate\": 0.05\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Answer",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/actions/get_answer",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"perceptrone_id\": \"{{perceptrone_id}}\",\n  \"input_vector\": [5.1, 3.5, 1.4, 0.2],\n  \"activation_type\": \"RELLU\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Weights",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/actions/weights"
+          }
+        }
+      ]
     },
     {
-      "name": "Get All Weights",
-      "request": {
-        "method": "GET",
-        "url": "{{base_url}}/weights"
-      }
+      "name": "Images",
+      "item": [
+        {
+          "name": "Get All Images",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/images/"
+          }
+        },
+        {
+          "name": "Get Image by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/images/{{image_id}}"
+          }
+        }
+      ]
     }
   ]
 }

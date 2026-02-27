@@ -1,0 +1,7 @@
+services:
+  mlp:
+    build: ./simple_emulator
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./simple_emulator_data/data:/app/simple_emulator_data

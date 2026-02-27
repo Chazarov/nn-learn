@@ -156,3 +156,5 @@ def get_visualisation(perceptrone: List[List[List[float]]], color_theme:ColorThe
         cv2.circle(canvas, (nx, ny), NEURON_R, (0, 0, 0), 2, cv2.LINE_AA)
 
     return canvas
+
+

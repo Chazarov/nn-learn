@@ -4,29 +4,34 @@ Base URL: `http://localhost:8000/api`
 
 ---
 
-## Endpoints
+## Сводная таблица эндпоинтов
 
 | Method | URL | Description |
 |--------|-----|-------------|
-| `POST` | `/upload/csv` | Upload a CSV training file. Returns `file_id` |
-| `POST` | `/learn/` | Train a perceptron on an uploaded CSV file. Returns `perceptrone_id` |
-| `POST` | `/get_answer` | Run forward propagation on input vector using trained weights. Returns predicted class and confidences |
-| `GET` | `/files` | List all uploaded CSV training files |
-| `GET` | `/weights` | List all saved trained perceptron weights |
+| `POST` | `/csv/upload` | Загрузить CSV-файл с обучающей выборкой. Возвращает `file_id` |
+| `GET`  | `/csv/` | Список всех загруженных CSV-файлов |
+| `POST` | `/actions/init` | Инициализировать перцептрон случайными весами. Возвращает `perceptrone_id` и `image_id` |
+| `POST` | `/actions/learn/` | Обучить перцептрон на загруженной выборке. Возвращает `perceptrone_id` и `image_id` |
+| `POST` | `/actions/get_answer` | Классифицировать входной вектор с помощью обученного перцептрона |
+| `GET`  | `/actions/weights` | Список всех сохранённых файлов весов |
+| `GET`  | `/images/` | Список всех сохранённых изображений визуализации |
+| `GET`  | `/images/{image_id}` | Получить изображение визуализации весов по id |
 
 ---
 
-## POST `/upload/csv`
+## CSV
 
-Upload a CSV dataset for training.
+### POST `/csv/upload`
 
-**CSV format:** first column — id, middle columns — features, last column — class label.
+Загрузить CSV-датасет для обучения.
+
+**Формат CSV:** первый столбец — id, средние — признаки, последний — метка класса.
 
 **Body:** `multipart/form-data`
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `file` | file | CSV file |
+| `file` | file | CSV-файл |
 
 **Response:**
 ```json
@@ -35,38 +40,87 @@ Upload a CSV dataset for training.
 
 ---
 
-## POST `/learn/`
+### GET `/csv/`
 
-Train a new perceptron on a previously uploaded CSV file.
-
-**Body:** `application/json`
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `file_id` | string | ID returned by `/upload/csv` |
-| `hidden_layers_architecture` | int[] | Sizes of hidden layers, e.g. `[6]` |
-| `activation_type` | enum | `RELLU` or `SIGMOID` |
-| `epochs` | int | Number of training epochs (default: 300) |
-| `learning_rate` | float | Learning rate (default: 0.05) |
+Список всех загруженных CSV-файлов.
 
 **Response:**
 ```json
-{ "perceptrone_id": "<uuid>" }
+{
+  "files": [
+    { "id": "<uuid>", "name": "<filename>.csv", "object_type": "file_csv" }
+  ]
+}
 ```
 
 ---
 
-## POST `/get_answer`
+## Actions
 
-Classify an input vector using a trained perceptron.
+### POST `/actions/init`
+
+Инициализировать новый перцептрон случайными весами на основе архитектуры.
+Сохраняет веса и создаёт снимок визуализации.
 
 **Body:** `application/json`
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `perceptrone_id` | string | ID returned by `/learn/` |
-| `input_vector` | float[] | Input feature values, e.g. `[5.1, 3.5, 1.4, 0.2]` |
-| `activation_type` | enum | `RELLU` or `SIGMOID` — must match the one used during training |
+| `file_id` | string | ID файла из `/csv/upload` |
+| `hidden_layers_architecture` | int[] | Размеры скрытых слоёв, например `[6]` или `[8, 4]` |
+
+**Response:**
+```json
+{
+  "perceptrone_id": "<uuid>",
+  "image_id": "<uuid>"
+}
+```
+
+**Errors:**
+- `404` — файл `file_id` не найден
+
+---
+
+### POST `/actions/learn/`
+
+Обучить перцептрон на загруженном CSV-файле.
+После обучения обновляет файл весов и снимок визуализации.
+
+**Body:** `application/json`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `file_id` | string | ID файла из `/csv/upload` |
+| `perceptrone_id` | string | ID перцептрона из `/actions/init` |
+| `activation_type` | enum | `RELLU` или `SIGMOID` |
+| `epochs` | int | Количество эпох обучения |
+| `learning_rate` | float | Скорость обучения |
+
+**Response:**
+```json
+{
+  "perceptrone_id": "<uuid>",
+  "image_id": "<uuid>"
+}
+```
+
+**Errors:**
+- `404` — файл `file_id` или `perceptrone_id` не найден
+
+---
+
+### POST `/actions/get_answer`
+
+Классифицировать входной вектор с помощью обученного перцептрона.
+
+**Body:** `application/json`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `perceptrone_id` | string | ID перцептрона из `/actions/init` или `/actions/learn/` |
+| `input_vector` | float[] | Значения признаков, например `[5.1, 3.5, 1.4, 0.2]` |
+| `activation_type` | enum | `RELLU` или `SIGMOID` — должен совпадать с использованным при обучении |
 
 **Response:**
 ```json
@@ -77,24 +131,54 @@ Classify an input vector using a trained perceptron.
 }
 ```
 
+**Errors:**
+- `404` — `perceptrone_id` не найден
+
 ---
 
-## GET `/files`
+### GET `/actions/weights`
 
-List all uploaded training CSV files.
+Список всех сохранённых файлов весов перцептрона.
 
 **Response:**
 ```json
-{ "files": [{ "id": "<uuid>", "name": "<filename>.csv" }] }
+{
+  "files": [
+    { "id": "<uuid>", "name": "<filename>.json", "object_type": "file_json" }
+  ]
+}
 ```
 
 ---
 
-## GET `/weights`
+## Images
 
-List all saved trained perceptron weights.
+### GET `/images/`
+
+Список всех сохранённых изображений визуализации весов.
 
 **Response:**
 ```json
-{ "files": [{ "id": "<uuid>", "name": "<filename>.json" }] }
+{
+  "images": [
+    { "id": "<uuid>", "name": "<uuid>.png", "object_type": "image_png" }
+  ]
+}
 ```
+
+---
+
+### GET `/images/{image_id}`
+
+Получить изображение визуализации весов перцептрона по id.
+
+**Path параметры:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `image_id` | string | ID изображения из `/actions/init` или `/actions/learn/` |
+
+**Response:** PNG-изображение (`image/png`)
+
+**Errors:**
+- `404` — изображение не найдено
