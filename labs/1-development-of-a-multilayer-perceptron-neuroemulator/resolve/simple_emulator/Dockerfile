@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN mkdir -p data/learn data/weights
+RUN mkdir -p data/learn data/weights data/visualisation
 
 EXPOSE 8000
 
