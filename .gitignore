@@ -46,3 +46,5 @@ labs/**/data/learn/*
 !labs/**/data/learn/sample_Iris.csv
 labs/**/data/weights/*
 !labs/**/data/weights/sample_Iris.json
+labs/**/data/visualisation/*
+!labs/**/data/visualisation/sample_Iris.png

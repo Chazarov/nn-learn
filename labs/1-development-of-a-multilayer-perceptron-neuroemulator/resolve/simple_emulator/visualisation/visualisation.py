@@ -1,3 +1,4 @@
+from enum import Enum
 import numpy as np
 import cv2
 import numpy.typing as npt
@@ -6,7 +7,7 @@ from typing import Generator, List, Optional, Tuple
 CELL: int = 50
 MARGIN: int = 80
 NEURON_GAP: int = 60
-NEURON_R: int = 18
+NEURON_R: int = 15
 WEIGHT_R: int = 14
 
 _COLORMAP: List[Tuple[float, Tuple[int, int, int]]] = [
@@ -44,8 +45,13 @@ def _grid_dims(perceptrone: List[List[List[float]]], q: int) -> Tuple[int, int]:
         return ns, nt
     return nt, ns  # RIGHT — direct
 
+class ColorTheme(str, Enum):
+    DARK = "dark"
+    WHITE = "white"
+    
 
-def get_visualisation(perceptrone: List[List[List[float]]]) -> npt.NDArray[np.uint8]:
+
+def get_visualisation(perceptrone: List[List[List[float]]], color_theme:ColorTheme = ColorTheme.WHITE) -> npt.NDArray[np.uint8]:
     num_layers: int = len(perceptrone)
     if num_layers == 0:
         return np.full((100, 100, 3), 245, dtype=np.uint8)
@@ -134,12 +140,16 @@ def get_visualisation(perceptrone: List[List[List[float]]]) -> npt.NDArray[np.ui
     canvas_w: int = int(x + MARGIN)
     canvas_h_int: int = int(canvas_h)
 
-    canvas: npt.NDArray[np.uint8] = np.full((canvas_h_int, canvas_w, 3), 245, dtype=np.uint8)
+    back_color = None
+    if color_theme == ColorTheme.DARK:
+        back_color = 0
+    elif color_theme == ColorTheme.WHITE:
+        back_color = 245
+    canvas: npt.NDArray[np.uint8] = np.full((canvas_h_int, canvas_w, 3), back_color, dtype=np.uint8)
 
     for wx, wy, val in weight_pts:
         clr: Tuple[int, int, int] = _weight_to_bgr(val)
         cv2.circle(canvas, (wx, wy), WEIGHT_R, clr, -1, cv2.LINE_AA)
-        cv2.circle(canvas, (wx, wy), WEIGHT_R, (100, 100, 100), 1, cv2.LINE_AA)
 
     for nx, ny in neuron_pts:
         cv2.circle(canvas, (nx, ny), NEURON_R, (255, 255, 255), -1, cv2.LINE_AA)

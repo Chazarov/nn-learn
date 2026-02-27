@@ -4,8 +4,9 @@ from typing import Any, Dict, List
 
 import cv2
 import numpy as np
+import numpy.typing as npt
 
-from .visualisation import get_visualisation
+from .visualisation import get_visualisation, ColorTheme
 
 
 def test_visualisation_iris() -> None:
@@ -19,7 +20,7 @@ def test_visualisation_iris() -> None:
 
     perceptrone: List[List[List[float]]] = data["weights"]
 
-    img: np.ndarray = get_visualisation(perceptrone)
+    img: npt.NDArray[np.uint8] = get_visualisation(perceptrone, ColorTheme.DARK)
 
     out_path: str = os.path.join(os.path.dirname(__file__), "visualisation_example.png")
     cv2.imwrite(out_path, img)
