@@ -1,13 +1,13 @@
 import traceback
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 
 from exceptions.auth_exception import AuthException
 from exceptions.not_found import NotFoundException
 from exceptions.domain import DomainException
 from exceptions.internal_server_exception import InternalServerException
-from models.token_payload import TokenPayload
+from models.auth import TokenPayload
 from container import project_service, auth_service
 from log import logger
 
@@ -17,7 +17,7 @@ router = APIRouter()
 
 
 @router.get("/{image_id}")
-async def get_image(image_id: str,
+async def get_image(image_id: str = Query(),
                     token: str = Depends(oauth2_scheme)) -> FileResponse:
     try:
         payload: TokenPayload = auth_service.token_validate(token)

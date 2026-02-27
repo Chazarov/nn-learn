@@ -1,7 +1,7 @@
 import traceback
 from typing import List
 
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from models.progect_nn import Project
 from models.db_models import ProjectDB
@@ -13,7 +13,7 @@ from log import logger
 
 class ProjectsRepository:
 
-    def __init__(self, session_factory: sessionmaker) -> None:
+    def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self.session_factory = session_factory
 
     def create(self, user_id: str, csv_file_id: str) -> Project:

@@ -2,7 +2,7 @@ import traceback
 import random
 from typing import Any, Dict, List, Tuple
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 
 from nn_logic.activation import ActivationType, ACTIVATIONS
 from nn_logic.forwrdpropagation.forward_propagation import forward_propogation
@@ -197,7 +197,7 @@ def get_all_projects(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
 
 @router.delete("/projects/{project_id}")
 def delete_project(
-    project_id: str,
+    project_id: str = Query(...),
     token: str = Depends(oauth2_scheme),
 ) -> Dict[str, Any]:
     try:

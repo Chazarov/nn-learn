@@ -5,11 +5,43 @@
   },
   "variable": [
     { "key": "base_url", "value": "http://localhost:8000/api" },
+    { "key": "token", "value": "" },
     { "key": "file_id", "value": "" },
-    { "key": "perceptrone_id", "value": "" },
+    { "key": "project_id", "value": "" },
     { "key": "image_id", "value": "" }
   ],
   "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Sign Up",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/sign-up",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"name\": \"username\",\n  \"password\": \"secret123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"secret123\"\n}"
+            }
+          }
+        }
+      ]
+    },
     {
       "name": "CSV",
       "item": [
@@ -18,6 +50,7 @@
           "request": {
             "method": "POST",
             "url": "{{base_url}}/csv/upload",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -30,14 +63,16 @@
           "name": "Get All CSV Files",
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/csv/"
+            "url": "{{base_url}}/csv/",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
           }
         },
         {
           "name": "Delete CSV",
           "request": {
             "method": "DELETE",
-            "url": "{{base_url}}/csv/{{file_id}}"
+            "url": "{{base_url}}/csv/{{file_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
           }
         }
       ]
@@ -50,7 +85,10 @@
           "request": {
             "method": "POST",
             "url": "{{base_url}}/actions/init",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "body": {
               "mode": "raw",
               "options": { "raw": { "language": "json" } },
@@ -63,11 +101,14 @@
           "request": {
             "method": "POST",
             "url": "{{base_url}}/actions/learn/",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "body": {
               "mode": "raw",
               "options": { "raw": { "language": "json" } },
-              "raw": "{\n  \"file_id\": \"{{file_id}}\",\n  \"perceptrone_id\": \"{{perceptrone_id}}\",\n  \"activation_type\": \"RELLU\",\n  \"epochs\": 300,\n  \"learning_rate\": 0.05\n}"
+              "raw": "{\n  \"project_id\": \"{{project_id}}\",\n  \"activation_type\": \"SIGMOID\",\n  \"epochs\": 300,\n  \"learning_rate\": 0.05\n}"
             }
           }
         },
@@ -76,26 +117,31 @@
           "request": {
             "method": "POST",
             "url": "{{base_url}}/actions/get_answer",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
             "body": {
               "mode": "raw",
               "options": { "raw": { "language": "json" } },
-              "raw": "{\n  \"perceptrone_id\": \"{{perceptrone_id}}\",\n  \"input_vector\": [5.1, 3.5, 1.4, 0.2],\n  \"activation_type\": \"RELLU\"\n}"
+              "raw": "{\n  \"perceptrone_id\": \"{{project_id}}\",\n  \"input_vector\": [5.1, 3.5, 1.4, 0.2],\n  \"activation_type\": \"SIGMOID\"\n}"
             }
           }
         },
         {
-          "name": "Get All Weights",
+          "name": "Get All Projects",
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/actions/weights"
+            "url": "{{base_url}}/actions/projects",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
           }
         },
         {
-          "name": "Delete Weights",
+          "name": "Delete Project",
           "request": {
             "method": "DELETE",
-            "url": "{{base_url}}/actions/weights/{{perceptrone_id}}"
+            "url": "{{base_url}}/actions/projects/{{project_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
           }
         }
       ]
@@ -104,17 +150,11 @@
       "name": "Images",
       "item": [
         {
-          "name": "Get All Images",
-          "request": {
-            "method": "GET",
-            "url": "{{base_url}}/images/"
-          }
-        },
-        {
           "name": "Get Image by ID",
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/images/{{image_id}}"
+            "url": "{{base_url}}/images/{{image_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
           }
         }
       ]

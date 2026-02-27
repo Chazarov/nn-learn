@@ -5,7 +5,7 @@ import traceback
 import jwt
 
 from repository.user_postgres_repository import UserRepository
-from models.token_payload import TokenPayload
+from models.auth import TokenPayload
 from models.user import User
 from exceptions.auth_exception import AuthException
 from exceptions.domain import DomainException

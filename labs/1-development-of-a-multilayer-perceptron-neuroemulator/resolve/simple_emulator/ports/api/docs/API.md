@@ -2,22 +2,75 @@
 
 Base URL: `http://localhost:8000/api`
 
+Все эндпоинты, кроме `/auth/sign-up` и `/auth/login`, требуют авторизации через Bearer-токен:
+
+```
+Authorization: Bearer <token>
+```
+
 ---
 
 ## Сводная таблица эндпоинтов
 
-| Method | URL | Description |
-|--------|-----|-------------|
-| `POST`   | `/csv/upload` | Загрузить CSV-файл с обучающей выборкой. Возвращает `file_id` |
-| `GET`    | `/csv/` | Список всех загруженных CSV-файлов |
-| `DELETE` | `/csv/{file_id}` | Удалить CSV-файл по id |
-| `POST`   | `/actions/init` | Инициализировать перцептрон случайными весами. Возвращает `perceptrone_id` и `image_id` |
-| `POST`   | `/actions/learn/` | Обучить перцептрон на загруженной выборке. Возвращает `perceptrone_id` и `image_id` |
-| `POST`   | `/actions/get_answer` | Классифицировать входной вектор с помощью обученного перцептрона |
-| `GET`    | `/actions/weights` | Список всех сохранённых файлов весов |
-| `DELETE` | `/actions/weights/{perceptrone_id}` | Удалить файл весов по id |
-| `GET`    | `/images/` | Список всех сохранённых изображений визуализации |
-| `GET`    | `/images/{image_id}` | Получить изображение визуализации весов по id |
+| Method | URL | Auth | Description |
+|--------|-----|------|-------------|
+| `POST` | `/auth/sign-up` | — | Регистрация нового пользователя |
+| `POST` | `/auth/login` | — | Вход в систему, получение токена |
+| `POST` | `/csv/upload` | Bearer | Загрузить CSV-файл с обучающей выборкой |
+| `GET` | `/csv/` | Bearer | Список CSV-файлов текущего пользователя |
+| `DELETE` | `/csv/{file_id}` | Bearer | Удалить CSV-файл по id |
+| `POST` | `/actions/init` | Bearer | Инициализировать перцептрон случайными весами |
+| `POST` | `/actions/learn/` | Bearer | Обучить перцептрон |
+| `POST` | `/actions/get_answer` | Bearer | Классифицировать входной вектор |
+| `GET` | `/actions/projects` | Bearer | Список проектов текущего пользователя |
+| `DELETE` | `/actions/projects/{project_id}` | Bearer | Удалить проект по id |
+| `GET` | `/images/{image_id}` | Bearer | Получить изображение визуализации весов |
+
+---
+
+## Auth
+
+### POST `/auth/sign-up`
+
+Регистрация нового пользователя. Возвращает JWT-токен.
+
+**Body:** `application/json`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `email` | string | Email пользователя |
+| `name` | string | Имя пользователя (уникальное) |
+| `password` | string | Пароль |
+
+**Response:**
+```json
+{ "token": "<jwt>" }
+```
+
+**Errors:**
+- `400` — пользователь с таким email или именем уже существует
+
+---
+
+### POST `/auth/login`
+
+Вход в систему. Возвращает JWT-токен.
+
+**Body:** `application/json`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `email` | string | Email пользователя |
+| `password` | string | Пароль |
+
+**Response:**
+```json
+{ "token": "<jwt>" }
+```
+
+**Errors:**
+- `401` — неверный пароль
+- `404` — пользователь не найден
 
 ---
 
@@ -33,24 +86,38 @@ Base URL: `http://localhost:8000/api`
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `file` | file | CSV-файл |
+| `file` | file | CSV-файл (расширение `.csv` обязательно) |
 
 **Response:**
 ```json
-{ "file_id": "<uuid>" }
+{
+  "id": "<uuid>",
+  "user_id": "<uuid>",
+  "name": "filename.csv",
+  "created_at": 1700000000
+}
 ```
+
+**Errors:**
+- `400` — файл не является CSV
+- `401` — невалидный или просроченный токен
 
 ---
 
 ### GET `/csv/`
 
-Список всех загруженных CSV-файлов.
+Список всех CSV-файлов текущего пользователя.
 
 **Response:**
 ```json
 {
   "files": [
-    { "id": "<uuid>", "name": "<filename>.csv", "object_type": "file_csv" }
+    {
+      "id": "<uuid>",
+      "user_id": "<uuid>",
+      "name": "filename.csv",
+      "created_at": 1700000000
+    }
   ]
 }
 ```
@@ -65,7 +132,7 @@ Base URL: `http://localhost:8000/api`
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `file_id` | string | ID файла из `/csv/upload` |
+| `file_id` | string | ID файла из `POST /csv/upload` |
 
 **Response:**
 ```json
@@ -73,7 +140,8 @@ Base URL: `http://localhost:8000/api`
 ```
 
 **Errors:**
-- `404` — файл не найден
+- `401` — невалидный или просроченный токен
+- `404` — файл не найден или не принадлежит пользователю
 
 ---
 
@@ -82,13 +150,13 @@ Base URL: `http://localhost:8000/api`
 ### POST `/actions/init`
 
 Инициализировать новый перцептрон случайными весами на основе архитектуры.
-Сохраняет веса и создаёт снимок визуализации.
+Создаёт проект, сохраняет веса и снимок визуализации.
 
 **Body:** `application/json`
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `file_id` | string | ID файла из `/csv/upload` |
+| `file_id` | string | ID файла из `POST /csv/upload` |
 | `hidden_layers_architecture` | int[] | Размеры скрытых слоёв, например `[6]` или `[8, 4]` |
 
 **Response:**
@@ -100,21 +168,21 @@ Base URL: `http://localhost:8000/api`
 ```
 
 **Errors:**
+- `401` — невалидный или просроченный токен
 - `404` — файл `file_id` не найден
 
 ---
 
 ### POST `/actions/learn/`
 
-Обучить перцептрон на загруженном CSV-файле.
-После обучения обновляет файл весов и снимок визуализации.
+Обучить перцептрон на CSV-файле, связанном с проектом.
+После обучения обновляет веса и снимок визуализации.
 
 **Body:** `application/json`
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `file_id` | string | ID файла из `/csv/upload` |
-| `perceptrone_id` | string | ID перцептрона из `/actions/init` |
+| `project_id` | string | ID проекта из `POST /actions/init` |
 | `activation_type` | enum | `RELLU` или `SIGMOID` |
 | `epochs` | int | Количество эпох обучения |
 | `learning_rate` | float | Скорость обучения |
@@ -122,13 +190,14 @@ Base URL: `http://localhost:8000/api`
 **Response:**
 ```json
 {
-  "perceptrone_id": "<uuid>",
+  "project_id": "<uuid>",
   "image_id": "<uuid>"
 }
 ```
 
 **Errors:**
-- `404` — файл `file_id` или `perceptrone_id` не найден
+- `401` — невалидный или просроченный токен
+- `404` — проект `project_id` не найден
 
 ---
 
@@ -140,7 +209,7 @@ Base URL: `http://localhost:8000/api`
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `perceptrone_id` | string | ID перцептрона из `/actions/init` или `/actions/learn/` |
+| `perceptrone_id` | string | ID проекта из `POST /actions/init` |
 | `input_vector` | float[] | Значения признаков, например `[5.1, 3.5, 1.4, 0.2]` |
 | `activation_type` | enum | `RELLU` или `SIGMOID` — должен совпадать с использованным при обучении |
 
@@ -148,40 +217,46 @@ Base URL: `http://localhost:8000/api`
 ```json
 {
   "predicted": "<class_name>",
-  "confidences": { "<class_name>": 0.0 },
-  "output": [0.0]
+  "confidences": { "<class_name>": 0.9312 },
+  "output": [0.9312, 0.0512, 0.0176]
 }
 ```
 
 **Errors:**
-- `404` — `perceptrone_id` не найден
+- `401` — невалидный или просроченный токен
+- `404` — проект не найден
 
 ---
 
-### GET `/actions/weights`
+### GET `/actions/projects`
 
-Список всех сохранённых файлов весов перцептрона.
+Список всех проектов текущего пользователя.
 
 **Response:**
 ```json
 {
-  "files": [
-    { "id": "<uuid>", "name": "<filename>.json", "object_type": "file_json" }
+  "projects": [
+    {
+      "id": "<uuid>",
+      "user_id": "<uuid>",
+      "csv_file_id": "<uuid>",
+      "created_at": 1700000000
+    }
   ]
 }
 ```
 
 ---
 
-### DELETE `/actions/weights/{perceptrone_id}`
+### DELETE `/actions/projects/{project_id}`
 
-Удалить файл весов перцептрона по id.
+Удалить проект и связанный файл весов по id.
 
 **Path параметры:**
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `perceptrone_id` | string | ID перцептрона из `/actions/init` или `/actions/learn/` |
+| `project_id` | string | ID проекта из `POST /actions/init` |
 
 **Response:**
 ```json
@@ -189,38 +264,26 @@ Base URL: `http://localhost:8000/api`
 ```
 
 **Errors:**
-- `404` — файл весов не найден
+- `401` — невалидный или просроченный токен
+- `404` — проект не найден
 
 ---
 
 ## Images
 
-### GET `/images/`
-
-Список всех сохранённых изображений визуализации весов.
-
-**Response:**
-```json
-{
-  "images": [
-    { "id": "<uuid>", "name": "<uuid>.png", "object_type": "image_png" }
-  ]
-}
-```
-
----
-
 ### GET `/images/{image_id}`
 
 Получить изображение визуализации весов перцептрона по id.
+`image_id` совпадает с `id` проекта.
 
 **Path параметры:**
 
 | Param | Type | Description |
 |-------|------|-------------|
-| `image_id` | string | ID изображения из `/actions/init` или `/actions/learn/` |
+| `image_id` | string | ID проекта из `POST /actions/init` или `POST /actions/learn/` |
 
 **Response:** PNG-изображение (`image/png`)
 
 **Errors:**
+- `401` — невалидный или просроченный токен
 - `404` — изображение не найдено

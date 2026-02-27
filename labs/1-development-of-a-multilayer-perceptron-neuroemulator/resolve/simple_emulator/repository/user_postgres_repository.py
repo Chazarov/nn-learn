@@ -1,6 +1,6 @@
 import traceback
 
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from models.user import User
 from models.db_models import UserDB
@@ -12,7 +12,7 @@ from log import logger
 
 class UserRepository:
 
-    def __init__(self, session_factory: sessionmaker) -> None:
+    def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self.session_factory = session_factory
 
     def get_user(self, id: str) -> User:
