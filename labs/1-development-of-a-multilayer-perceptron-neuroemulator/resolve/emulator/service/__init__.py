@@ -1,2 +1,0 @@
-from perceptron.base_percept import Perceptron
-from perceptron.iperceptron import IPerceptron

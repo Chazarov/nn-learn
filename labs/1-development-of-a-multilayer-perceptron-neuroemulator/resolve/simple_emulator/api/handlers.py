@@ -94,7 +94,7 @@ def learn_perceptrone(
     perceptron_id = str(uuid.uuid4())
     os.makedirs(DATA_WEIGHTS, exist_ok=True)
     with open(os.path.join(DATA_WEIGHTS, f"{perceptron_id}.json"), "w") as f:
-        json.dump({"weights": perceptron, "mins": mins, "maxs": maxs, "classes": classes}, f)
+        json.dump({"weights": perceptron, "mins": mins, "maxs": maxs, "classes": classes}, f, ensure_ascii=False, indent=4)
 
     return {"perceptrone_id": perceptron_id}
 
