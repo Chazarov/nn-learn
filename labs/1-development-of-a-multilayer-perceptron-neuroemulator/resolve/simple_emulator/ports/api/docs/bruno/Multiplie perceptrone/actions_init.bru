@@ -1,0 +1,18 @@
+meta {
+  name: Init Perceptrone
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/actions/init
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "file_id": "{{file_id}}",
+    "hidden_layers_architecture": [6]
+  }
+}

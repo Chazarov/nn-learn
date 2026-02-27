@@ -174,3 +174,12 @@ async def get_all_weights() -> Dict[str, Any]:
     return {
         "files": [{"id": n.replace(".json", ""), "name": n, "object_type":"file_json"} for n in file_names]
     }
+
+
+@router.delete("/weights/{perceptrone_id}")
+async def delete_weights(perceptrone_id: str) -> Dict[str, Any]:
+    path: str = os.path.join(DATA_WEIGHTS, f"{perceptrone_id}.json")
+    if not os.path.exists(path):
+        raise HTTPException(404, f"Weights '{perceptrone_id}' not found")
+    os.remove(path)
+    return {"deleted": perceptrone_id}

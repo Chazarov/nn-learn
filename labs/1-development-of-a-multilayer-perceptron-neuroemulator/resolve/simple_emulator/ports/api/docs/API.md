@@ -8,14 +8,16 @@ Base URL: `http://localhost:8000/api`
 
 | Method | URL | Description |
 |--------|-----|-------------|
-| `POST` | `/csv/upload` | Загрузить CSV-файл с обучающей выборкой. Возвращает `file_id` |
-| `GET`  | `/csv/` | Список всех загруженных CSV-файлов |
-| `POST` | `/actions/init` | Инициализировать перцептрон случайными весами. Возвращает `perceptrone_id` и `image_id` |
-| `POST` | `/actions/learn/` | Обучить перцептрон на загруженной выборке. Возвращает `perceptrone_id` и `image_id` |
-| `POST` | `/actions/get_answer` | Классифицировать входной вектор с помощью обученного перцептрона |
-| `GET`  | `/actions/weights` | Список всех сохранённых файлов весов |
-| `GET`  | `/images/` | Список всех сохранённых изображений визуализации |
-| `GET`  | `/images/{image_id}` | Получить изображение визуализации весов по id |
+| `POST`   | `/csv/upload` | Загрузить CSV-файл с обучающей выборкой. Возвращает `file_id` |
+| `GET`    | `/csv/` | Список всех загруженных CSV-файлов |
+| `DELETE` | `/csv/{file_id}` | Удалить CSV-файл по id |
+| `POST`   | `/actions/init` | Инициализировать перцептрон случайными весами. Возвращает `perceptrone_id` и `image_id` |
+| `POST`   | `/actions/learn/` | Обучить перцептрон на загруженной выборке. Возвращает `perceptrone_id` и `image_id` |
+| `POST`   | `/actions/get_answer` | Классифицировать входной вектор с помощью обученного перцептрона |
+| `GET`    | `/actions/weights` | Список всех сохранённых файлов весов |
+| `DELETE` | `/actions/weights/{perceptrone_id}` | Удалить файл весов по id |
+| `GET`    | `/images/` | Список всех сохранённых изображений визуализации |
+| `GET`    | `/images/{image_id}` | Получить изображение визуализации весов по id |
 
 ---
 
@@ -52,6 +54,26 @@ Base URL: `http://localhost:8000/api`
   ]
 }
 ```
+
+---
+
+### DELETE `/csv/{file_id}`
+
+Удалить загруженный CSV-файл по id.
+
+**Path параметры:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `file_id` | string | ID файла из `/csv/upload` |
+
+**Response:**
+```json
+{ "deleted": "<uuid>" }
+```
+
+**Errors:**
+- `404` — файл не найден
 
 ---
 
@@ -148,6 +170,26 @@ Base URL: `http://localhost:8000/api`
   ]
 }
 ```
+
+---
+
+### DELETE `/actions/weights/{perceptrone_id}`
+
+Удалить файл весов перцептрона по id.
+
+**Path параметры:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `perceptrone_id` | string | ID перцептрона из `/actions/init` или `/actions/learn/` |
+
+**Response:**
+```json
+{ "deleted": "<uuid>" }
+```
+
+**Errors:**
+- `404` — файл весов не найден
 
 ---
 

@@ -1,0 +1,21 @@
+meta {
+  name: Learn
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/actions/learn/
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "file_id": "{{file_id}}",
+    "perceptrone_id": "{{perceptrone_id}}",
+    "activation_type": "RELLU",
+    "epochs": 300,
+    "learning_rate": 0.05
+  }
+}

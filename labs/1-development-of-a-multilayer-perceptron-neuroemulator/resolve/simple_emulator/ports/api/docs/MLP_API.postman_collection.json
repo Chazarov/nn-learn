@@ -32,6 +32,13 @@
             "method": "GET",
             "url": "{{base_url}}/csv/"
           }
+        },
+        {
+          "name": "Delete CSV",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/csv/{{file_id}}"
+          }
         }
       ]
     },
@@ -82,6 +89,13 @@
           "request": {
             "method": "GET",
             "url": "{{base_url}}/actions/weights"
+          }
+        },
+        {
+          "name": "Delete Weights",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/actions/weights/{{perceptrone_id}}"
           }
         }
       ]

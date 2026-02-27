@@ -1,0 +1,19 @@
+meta {
+  name: Get Answer
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/actions/get_answer
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "perceptrone_id": "{{perceptrone_id}}",
+    "input_vector": [5.1, 3.5, 1.4, 0.2],
+    "activation_type": "RELLU"
+  }
+}

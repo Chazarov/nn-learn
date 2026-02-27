@@ -1,0 +1,11 @@
+meta {
+  name: Delete CSV
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{base_url}}/csv/{{file_id}}
+  body: none
+  auth: none
+}
