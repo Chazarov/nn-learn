@@ -59,7 +59,13 @@ def init_new_perceptrone(
         raw_samples: List[Sample] = _csv_data_to_samples(data)
         _, mins, maxs = normalize(raw_samples)
 
-        nn_data: NNData = NNData(weights=perceptron, mins=mins, maxs=maxs, classes=data.classes)
+        nn_data: NNData = NNData(
+            weights=perceptron,
+            input_size=input_layer_size,
+            mins=mins,
+            maxs=maxs,
+            classes=data.classes,
+        )
         img = get_visualisation(perceptron, ColorTheme.DARK)
 
         project = project_service.create(payload.user_id, nn_data=nn_data, csv_file_id=file_id)
@@ -187,6 +193,27 @@ def get_all_projects(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
     try:
         projects = project_service.get_projects(payload.user_id)
         return {"projects": [p.model_dump() for p in projects]}
+    except DomainException as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"error while getting projects: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.get("/project/{project_id}")
+def get_project_data(token: str = Depends(oauth2_scheme),
+    project_id:str = Path(...)) -> Dict[str, Any]:
+
+    try:
+        payload = auth_service.token_validate(token)
+    except AuthException as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+    try:
+        project = project_service.get_project(payload.user_id, project_id)
+        prooject_dict =  project.model_dump()
+        prooject_dict["nn_data"]["weights"] = None
+        return {"project": prooject_dict}
     except DomainException as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

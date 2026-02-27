@@ -137,6 +137,14 @@
           }
         },
         {
+          "name": "Get Project",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/actions/project/{{project_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
           "name": "Delete Project",
           "request": {
             "method": "DELETE",

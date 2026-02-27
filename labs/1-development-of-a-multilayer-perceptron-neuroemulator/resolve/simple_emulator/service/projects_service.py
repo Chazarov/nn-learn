@@ -85,6 +85,7 @@ class ProjectsService:
             existing_data = self.weights_disk_repository.get_by_id(id=project_info.id)
             updated_data = NNData(
                 weights=weights,
+                input_size=existing_data.input_size,
                 mins=existing_data.mins,
                 maxs=existing_data.maxs,
                 classes=existing_data.classes,

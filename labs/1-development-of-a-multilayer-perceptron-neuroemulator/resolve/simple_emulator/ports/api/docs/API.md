@@ -23,6 +23,7 @@ Authorization: Bearer <token>
 | `POST` | `/actions/learn/` | Bearer | Обучить перцептрон |
 | `POST` | `/actions/get_answer` | Bearer | Классифицировать входной вектор |
 | `GET` | `/actions/projects` | Bearer | Список проектов текущего пользователя |
+| `GET` | `/actions/project/{project_id}` | Bearer | Получить данные проекта (без весов) |
 | `DELETE` | `/actions/projects/{project_id}` | Bearer | Удалить проект по id |
 | `GET` | `/images/{image_id}` | Bearer | Получить изображение визуализации весов |
 
@@ -48,7 +49,7 @@ Authorization: Bearer <token>
 ```
 
 **Errors:**
-- `400` — пользователь с таким email или именем уже существует
+- `403` — пользователь с таким email или именем уже существует
 
 ---
 
@@ -94,7 +95,8 @@ Authorization: Bearer <token>
   "id": "<uuid>",
   "user_id": "<uuid>",
   "name": "filename.csv",
-  "created_at": 1700000000
+  "created_at": 1700000000,
+  "is_sample": false
 }
 ```
 
@@ -116,7 +118,8 @@ Authorization: Bearer <token>
       "id": "<uuid>",
       "user_id": "<uuid>",
       "name": "filename.csv",
-      "created_at": 1700000000
+      "created_at": 1700000000,
+      "is_sample": false
     }
   ]
 }
@@ -141,6 +144,7 @@ Authorization: Bearer <token>
 
 **Errors:**
 - `401` — невалидный или просроченный токен
+- `403` — нельзя удалить образец (sample)
 - `404` — файл не найден или не принадлежит пользователю
 
 ---
@@ -162,7 +166,7 @@ Authorization: Bearer <token>
 **Response:**
 ```json
 {
-  "perceptrone_id": "<uuid>",
+  "project_id": "<uuid>",
   "image_id": "<uuid>"
 }
 ```
@@ -245,6 +249,41 @@ Authorization: Bearer <token>
   ]
 }
 ```
+
+---
+
+### GET `/actions/project/{project_id}`
+
+Получить данные одного проекта: метаданные и параметры нейросети (без весов).
+
+**Path параметры:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `project_id` | string | ID проекта из `POST /actions/init` |
+
+**Response:**
+```json
+{
+  "project": {
+    "id": "<uuid>",
+    "user_id": "<uuid>",
+    "csv_file_id": "<uuid>",
+    "created_at": 1700000000,
+    "nn_data": {
+      "weights": null,
+      "input_size": 4,
+      "mins": [4.3, 2.0, 1.0, 0.1],
+      "maxs": [7.9, 4.4, 6.9, 2.5],
+      "classes": ["setosa", "versicolor", "virginica"]
+    }
+  }
+}
+```
+
+**Errors:**
+- `401` — невалидный или просроченный токен
+- `404` — проект не найден
 
 ---
 

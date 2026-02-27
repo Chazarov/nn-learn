@@ -11,6 +11,7 @@ class Project(BaseModel):
 
 class NNData(BaseModel):
     weights: List[List[List[float]]]
+    input_size: int
     mins: List[float]
     maxs: List[float]
     classes: List[str]

@@ -14,10 +14,13 @@ class WeightsDiskRepository:
     def create(self, id:str, nn_data: NNData):
         os.makedirs(self.directory, exist_ok=True)
         with open(os.path.join(self.directory, f"{id}.json"), "w") as f:
-            json.dump({"weights": nn_data.weights, 
-                       "mins": nn_data.mins, 
-                       "maxs": nn_data.maxs, 
-                       "classes": nn_data.classes}, f, ensure_ascii=False, indent=4)
+            json.dump({
+                "weights": nn_data.weights,
+                "input_size": nn_data.input_size,
+                "mins": nn_data.mins,
+                "maxs": nn_data.maxs,
+                "classes": nn_data.classes,
+            }, f, ensure_ascii=False, indent=4)
 
     def delete(self, id: str) -> None:
         path = os.path.join(self.directory, f"{id}.json")
@@ -33,4 +36,6 @@ class WeightsDiskRepository:
         with open(weights_path) as wf:
             saved: Any = json.load(wf)
 
+        if "input_size" not in saved:
+            saved["input_size"] = len(saved.get("mins", []))
         return NNData.model_validate(saved)
