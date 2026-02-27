@@ -1,52 +1,39 @@
-import csv
 import json
 import os
 import random
 import uuid
 from typing import Any, Dict, List, cast
 
-from fastapi import APIRouter, Body, HTTPException
 
-from activation import ActivationType, ACTIVATIONS
-from forwrdpropagation.forward_propagation import forward_propogation
-from loss import MSE
-from mathh.mv import Sample, apply_adjustments, init_perceptrone as build_perceptrone, normalize
-from training.backpropagation import BackPropagation
-from repository.image_repository import ImageRepository
-from visualisation.visualisation import get_visualisation, ColorTheme
+from fastapi import APIRouter, Body, Depends, HTTPException
+
+
+
+from nn_logic.activation import ActivationType, ACTIVATIONS
+from nn_logic.forwrdpropagation.forward_propagation import forward_propogation
+from nn_logic.loss import MSE
+from nn_logic.mathh.mv import apply_adjustments, init_perceptrone as build_perceptrone, normalize
+from nn_logic.training.backpropagation import BackPropagation
+from nn_logic.visualisation.visualisation import get_visualisation, ColorTheme
+from models.csv_file import CsvFileData
+from models.progect_nn import NNData, Project, ProjectWithData
+
+from container import csv_service, auth_service, project_service
+
+from api.handlers.tools import oauth2_scheme
+
+
 
 router = APIRouter()
 
 DATA_WEIGHTS = "data/weights"
 DATA_LEARN = "data/learn"
 
-_images_repository = ImageRepository()
-
-def _load_csv(path: str) -> tuple[List[Sample], List[str]]:
-    rows: List[Sample] = []
-    classes: List[str] = []
-    with open(path, newline="") as f:
-        reader = csv.DictReader(f)
-        columns: List[str] = list(reader.fieldnames or [])
-        feature_cols = columns[1:-1]
-        label_col = columns[-1]
-        for row in reader:
-            label = str(row[label_col])
-            if label not in classes:
-                classes.append(label)
-        f.seek(0)
-        next(csv.reader(f))
-        reader2 = csv.DictReader(open(path, newline=""))
-        for row in reader2:
-            x: List[float] = [float(row[c]) for c in feature_cols]
-            label_idx = classes.index(str(row[label_col]))
-            y: List[float] = [1.0 if i == label_idx else 0.0 for i in range(len(classes))]
-            rows.append((x, y))
-    return rows, classes
 
 
 @router.post("/init")
 def init_new_perceptrone(
+    token: str = Depends(oauth2_scheme),
     file_id: str = Body(...),
     hidden_layers_architecture: List[int] = Body(...),
 ) -> Dict[str, Any]:
@@ -54,88 +41,80 @@ def init_new_perceptrone(
     if not os.path.exists(path):
         raise HTTPException(404, f"File {file_id} not found")
 
-    raw_data, classes = _load_csv(path)
+    payload = auth_service.token_validate(token)
 
-    input_layer_size: int = len(raw_data[0][0])
-    output_layer_size: int = len(classes)
+    data:CsvFileData = csv_service.get_data(file_id=file_id, user_id=payload.user_id)
+
+    input_layer_size: int = len(data.rows[0].signs_vector)
+    output_layer_size: int = len(data.classes)
 
     architecture: List[int] = [input_layer_size] + hidden_layers_architecture + [output_layer_size]
 
     perceptron: List[List[List[float]]] = build_perceptrone(architecture)
 
-    _, mins, maxs = normalize(raw_data)
+    _, mins, maxs = normalize(raw_data) # Исправить процесс инициализации 
 
-    perceptron_id: str = str(uuid.uuid4())
+    nn_data :NNData = NNData(weights=perceptron, mins=mins, maxs=maxs, classes = data.classes)
+
 
     img = get_visualisation(perceptron, ColorTheme.DARK)
 
-    image_id = _images_repository.save_image(perceptron_id, img)
+    project = project_service.create(payload.user_id, nn_data=nn_data, csv_file_id=file_id)
+    image_id = project_service.save_image(payload.user_id, project.id, img)
 
-    os.makedirs(DATA_WEIGHTS, exist_ok=True)
-    with open(os.path.join(DATA_WEIGHTS, f"{perceptron_id}.json"), "w") as f:
-        json.dump({"weights": perceptron, "mins": mins, "maxs": maxs, "classes": classes}, f, ensure_ascii=False, indent=4)
 
     return {
-        "perceptrone_id": perceptron_id,
+        "perceptrone_id": project.id,
         "image_id": image_id,
     }
 
 
 @router.post("/learn/")
 def learn_perceptrone(
-    file_id: str = Body(...),
-    perceptrone_id: str = Body(...),
+    token: str = Depends(oauth2_scheme),
+    project_id: str = Body(...),
     activation_type: ActivationType = Body(...),
     epochs: int = Body(...),
     learning_rate: float = Body(...),
 ) -> Dict[str, Any]:
 
-    path = os.path.join(DATA_LEARN, f"{file_id}.csv")
-    if not os.path.exists(path):
-        raise HTTPException(404, f"File {file_id} not found")
+    payload = auth_service.token_validate(token)
 
-    raw_data, classes = _load_csv(path)
-
-
-    weights_path: str = os.path.join(DATA_WEIGHTS, f"{perceptrone_id}.json")
-    if not os.path.exists(weights_path):
-        raise HTTPException(404, f"Perceptrone {perceptrone_id} not found")
-
-    with open(weights_path) as wf:
-        saved: Any = json.load(wf)
-
-    perceptron: List[List[List[float]]] = cast(List[List[List[float]]], saved["weights"])
-    classes: List[str] = cast(List[str], saved["classes"])
+    p:ProjectWithData = project_service.get_project(payload.user_id, project_id)
+    samples_data: CsvFileData = csv_service.get_data(p.csv_file_id, payload.user_id)
+    
 
     activation = ACTIVATIONS[activation_type]()
-    bp = BackPropagation(MSE(), learning_rate, perceptron, activation)
+    bp = BackPropagation(MSE(), learning_rate, p.nn_data.weights, activation)
 
-    data, mins, maxs = normalize(raw_data)
+
+    # Здесь исправить обучение. Оно должно быть по данным из полученных схем (samples_data)
     random.shuffle(data)
 
     for _ in range(epochs):
         random.shuffle(data)
         for x, y in data:
-            outputs, weighted_sums = forward_propogation(x, perceptron, activation)
+            outputs, weighted_sums = forward_propogation(x, p.nn_data.weights, activation)
             adjustments = bp.training_iteration_calculate(x, outputs, y, weighted_sums)
-            apply_adjustments(perceptron, adjustments)
+            apply_adjustments(p.nn_data.weights, adjustments)
 
-    img = get_visualisation(perceptron, ColorTheme.DARK)
+    img = get_visualisation(p.nn_data.weights, ColorTheme.DARK)
 
-    image_id = _images_repository.save_image(perceptrone_id, img)
 
-    os.makedirs(DATA_WEIGHTS, exist_ok=True)
-    with open(os.path.join(DATA_WEIGHTS, f"{perceptrone_id}.json"), "w") as f:
-        json.dump({"weights": perceptron, "mins": mins, "maxs": maxs, "classes": classes}, f, ensure_ascii=False, indent=4)
+
+    image_id = project_service.save_image(payload.user_id, p.id, img)
+    project_service.update_weights(payload.user_id, p.id, p.nn_data.weights) #Этот метод не законен. Закончи его реализацию
+
 
     return {
-            "perceptrone_id": perceptrone_id,
+            "project_id": p.id,
             "image_id": image_id,
             }
 
 
 @router.post("/get_answer")
 def get_answer(
+    token: str = Depends(oauth2_scheme),
     perceptrone_id: str = Body(...),
     input_vector: List[float] = Body(...),
     activation_type: ActivationType = Body(...),
@@ -168,7 +147,7 @@ def get_answer(
 
 
 @router.get("/weights")
-async def get_all_weights() -> Dict[str, Any]:
+async def get_all_weights(token: str = Depends(oauth2_scheme),) -> Dict[str, Any]:
     os.makedirs(DATA_WEIGHTS, exist_ok=True)
     file_names = [n for n in os.listdir(DATA_WEIGHTS) if n.endswith(".json")]
     return {

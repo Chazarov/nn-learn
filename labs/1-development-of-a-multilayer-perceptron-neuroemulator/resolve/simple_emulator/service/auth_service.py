@@ -9,16 +9,15 @@ class AuthService:
         ...
 
 
-    def token_validate(self, token:str) -> bool:
+
+    def token_validate(self, token:str) -> TokenPayload:
+
         ...
 
-    def get_token_payload(self, token:str) -> TokenPayload:
-        ...
 
-
-    def sign_up(self, password: str, email:str, name:str) -> str:
+    def sign_up(self, password: str, email:str, name:str) -> User:
 
         hashed_password = ...
-        user_id:str = self.user_repository.create_user(hashed_password, email, name)
+        User:str = self.user_repository.create_user(hashed_password, email, name)
         token = self.get_token(user_id, hashed_password)
         return token

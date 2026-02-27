@@ -3,13 +3,20 @@ from typing import List
 from pydantic import BaseModel
 
 
-class WeightsMeta(BaseModel):
+class Project(BaseModel):
     id: str
     user_id: str
     created_at: int
+    csv_file_id:str
 
-class WeightsData(BaseModel):
+class NNData(BaseModel):
     weights: List[List[List[float]]]
     mins: List[float]
     maxs: List[float]
     classes: List[str]
+
+    
+class ProjectWithData(Project):
+    nn_data:NNData
+
+

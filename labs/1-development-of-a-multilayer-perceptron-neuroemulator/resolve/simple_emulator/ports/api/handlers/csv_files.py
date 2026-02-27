@@ -1,40 +1,45 @@
-import uuid
 from typing import Any, Dict
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 
 from exceptions.not_found import NotFoundException
-from repository.csv_repository import CsvRepository
+from api.handlers.tools import oauth2_scheme
+from container import csv_service, auth_service
 
 router = APIRouter()
 
-_repo: CsvRepository = CsvRepository()
+
 
 
 @router.post("/upload")
-async def upload_csv(file: UploadFile = File(..., description="CSV training sample")) -> Dict[str, Any]:
+async def upload_csv(file: UploadFile = File(..., description="CSV training sample"),
+                    token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
     if not file.filename or not file.filename.endswith(".csv"):
         raise HTTPException(400, "Only CSV files are accepted")
-
-    file_id: str = str(uuid.uuid4())
+    payload = auth_service.token_validate(token)
     content: bytes = await file.read()
-    _repo.save(file_id, content)
+    result = csv_service.save(payload.user_id, content, file.filename)
 
-    return {"file_id": file_id}
+    return result.model_dump()
 
 
 @router.get("/")
-async def get_all_samples() -> Dict[str, Any]:
-    ids = _repo.get_all()
+async def get_all_samples(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+    payload = auth_service.token_validate(token)
+
+    files = csv_service.get_all(user_id=payload.user_id)
     return {
-        "files": [{"id": file_id, "name": f"{file_id}.csv", "object_type": "file_csv"} for file_id in ids]
+        "files": [file.model_dump() for file in files]
     }
 
 
 @router.delete("/{file_id}")
-async def delete_csv(file_id: str) -> Dict[str, Any]:
+async def delete_csv(file_id: str = Query(...),
+                    token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+    payload = auth_service.token_validate(token)
+
     try:
-        _repo.delete(file_id)
+        csv_service.delete(payload.user_id, file_id)
     except NotFoundException as e:
         raise HTTPException(status_code=404, detail=str(e))
     return {"deleted": file_id}

@@ -1,2 +1,0 @@
-class WeightsService:
-    def 
