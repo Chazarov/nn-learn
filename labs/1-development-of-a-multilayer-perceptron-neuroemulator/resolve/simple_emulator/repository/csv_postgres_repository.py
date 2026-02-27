@@ -1,5 +1,5 @@
 import traceback
-from typing import Any, List
+from typing import List
 
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -17,13 +17,10 @@ class CSVRelativeRepository:
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self.session_factory = session_factory
 
-    def create(self, user_id: str, name: str, oter_id: Any = None, is_sample: bool = False) -> CsvFile:
+    def create(self, user_id: str, name: str, is_sample: bool = False) -> CsvFile:
         try:
             with self.session_factory() as session:
-                if oter_id is not None:
-                    db_file = CsvFileDB(user_id=user_id, name=name, id=oter_id, is_sample=is_sample)
-                else:
-                    db_file = CsvFileDB(user_id=user_id, name=name, is_sample=is_sample)
+                db_file = CsvFileDB(user_id=user_id, name=name, is_sample=is_sample)
                 session.add(db_file)
                 session.commit()
                 session.refresh(db_file)

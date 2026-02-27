@@ -1,7 +1,7 @@
 import traceback
 from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from container import auth_service, csv_service
 from exceptions.auth_exception import AuthException
@@ -11,6 +11,7 @@ from exceptions.internal_server_exception import InternalServerException
 from exceptions.already_exists import AlreadyExists
 from models.auth import SignUpRequest, LoginRequest
 from log import logger
+from api.handlers.tools import oauth2_scheme
 
 router = APIRouter()
 
@@ -47,6 +48,25 @@ def login(body: LoginRequest) -> Dict[str, Any]:
     try:
         token = auth_service.get_token(email=body.email, password=body.password)
         return {"token": token}
+    except AuthException as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    except NotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except InternalServerException:
+        raise HTTPException(status_code=500, detail="Internal server error")
+    except DomainException as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"error in login handler: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.post("/getme")
+def getme(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+    try:
+        pl = auth_service.token_validate(token)
+        user = auth_service.get_me(pl.user_id)
+        return {"me": user}
     except AuthException as e:
         raise HTTPException(status_code=401, detail=str(e))
     except NotFoundException as e:

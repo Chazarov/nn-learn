@@ -1,3 +1,4 @@
+import os
 import traceback
 from typing import List
 
@@ -7,6 +8,7 @@ from repository.csv_postgres_repository import CSVRelativeRepository
 from exceptions.domain import DomainException
 from exceptions.internal_server_exception import InternalServerException
 from log import logger
+from config import config
 
 
 
@@ -38,8 +40,12 @@ class CsvService:
 
         return file
 
-    def init_sample(self, user_id:str):
-        self.relative_repo.create(user_id, "sample_Iris.csv", "sample_Iris", is_sample=True)
+    def init_sample(self, user_id: str):
+        sample_name = "sample_Iris.csv"
+        sample_path = os.path.join(config.CSV_DIRECTORY, sample_name)
+        with open(sample_path, "rb") as f:
+            content = f.read()
+        self.save(user_id, content, sample_name)
 
     def get_all(self, user_id: str) -> List[CsvFile]:
         return self.relative_repo.get_by_user(user_id)

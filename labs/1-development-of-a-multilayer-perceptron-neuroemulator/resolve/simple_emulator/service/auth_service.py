@@ -71,3 +71,6 @@ class AuthService:
             logger.error(f"error while signing up: {e}")
             traceback.print_exc()
             raise InternalServerException()
+
+    def get_me(self, user_id:str) -> User:
+        return self.user_repository.get_user(user_id)

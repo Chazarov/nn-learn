@@ -48,3 +48,45 @@ labs/**/data/weights/*
 !labs/**/data/weights/sample_Iris.json
 labs/**/data/visualisation/*
 !labs/**/data/visualisation/sample_Iris.png
+
+
+
+
+# Зависимости
+node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# React сборки
+build/
+dist/
+
+# Docker
+.dockerignore
+Dockerfile*
+docker-compose*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Система
+.DS_Store
+Thumbs.db
+
+# Env файлы
+.env
+.env.local
+.env.*.local
+
+# Тестирование
+coverage/
+
+# Пайпайпы CI/CD
+.pytest_cache/
+__pycache__/
+*.pyc
