@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile
 
 from exceptions.auth_exception import AuthException
 from exceptions.not_found import NotFoundException
+from exceptions.forbidden_exception import ForbiddenException
 from exceptions.domain import DomainException
 from exceptions.internal_server_exception import InternalServerException
 from ports.api.handlers.tools import oauth2_scheme
@@ -65,6 +66,8 @@ async def delete_csv(file_id: str = Path(...),
 
     try:
         csv_service.delete(payload.user_id, file_id)
+    except ForbiddenException as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except NotFoundException as e:
         raise HTTPException(status_code=404, detail=str(e))
     except InternalServerException:

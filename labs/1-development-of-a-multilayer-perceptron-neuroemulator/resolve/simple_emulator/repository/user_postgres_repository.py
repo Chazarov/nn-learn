@@ -1,3 +1,4 @@
+from sqlalchemy.exc import IntegrityError
 import traceback
 
 from sqlalchemy.orm import Session, sessionmaker
@@ -7,6 +8,7 @@ from models.db_models import UserDB
 from exceptions.not_found import NotFoundException
 from exceptions.internal_server_exception import InternalServerException
 from exceptions.domain import DomainException
+from exceptions.already_exists import AlreadyExists
 from log import logger
 
 
@@ -41,6 +43,10 @@ class UserRepository:
                             name=db_user.name, created_at=db_user.created_at, email=db_user.email)
         except DomainException:
             raise
+        except IntegrityError as e:
+            logger.error(f"user with same data already exists: {e}")
+            traceback.print_exc()
+            raise AlreadyExists()
         except Exception as e:
             logger.error(f"error while creating user: {e}")
             traceback.print_exc()

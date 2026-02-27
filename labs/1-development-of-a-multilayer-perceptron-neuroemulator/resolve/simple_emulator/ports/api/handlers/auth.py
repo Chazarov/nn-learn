@@ -3,11 +3,12 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
-from container import auth_service
+from container import auth_service, csv_service
 from exceptions.auth_exception import AuthException
 from exceptions.not_found import NotFoundException
 from exceptions.domain import DomainException
 from exceptions.internal_server_exception import InternalServerException
+from exceptions.already_exists import AlreadyExists
 from models.auth import SignUpRequest, LoginRequest
 from log import logger
 
@@ -22,6 +23,8 @@ def sign_up(body: SignUpRequest) -> Dict[str, Any]:
         token = auth_service.sign_up(
             password=body.password, email=body.email, name=body.name
         )
+        pl = auth_service.token_validate(token)
+        csv_service.init_sample(pl.user_id)
         return {"token": token}
     except AuthException as e:
         raise HTTPException(status_code=401, detail=str(e))
@@ -29,6 +32,8 @@ def sign_up(body: SignUpRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail=str(e))
     except InternalServerException:
         raise HTTPException(status_code=500, detail="Internal server error")
+    except AlreadyExists as e:
+        raise HTTPException(status_code=403, detail=str("user with same data already exists"))
     except DomainException as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

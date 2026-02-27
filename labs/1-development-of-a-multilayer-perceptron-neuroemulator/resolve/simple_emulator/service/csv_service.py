@@ -9,6 +9,7 @@ from exceptions.internal_server_exception import InternalServerException
 from log import logger
 
 
+
 class CsvService:
     def __init__(self, disk_repo: CsvDiskRepository, relative_repo: CSVRelativeRepository):
         self.disk_repo = disk_repo
@@ -36,6 +37,9 @@ class CsvService:
             raise InternalServerException()
 
         return file
+
+    def init_sample(self, user_id:str):
+        self.relative_repo.create(user_id, "sample_Iris.csv", "sample_Iris", is_sample=True)
 
     def get_all(self, user_id: str) -> List[CsvFile]:
         return self.relative_repo.get_by_user(user_id)

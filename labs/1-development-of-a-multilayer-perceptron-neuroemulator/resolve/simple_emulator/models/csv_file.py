@@ -10,6 +10,7 @@ class CsvFile(BaseModel):
     user_id: str
     name: str
     created_at: int
+    is_sample: bool
 
 
 class SampleModel(BaseModel):

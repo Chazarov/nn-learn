@@ -72,7 +72,7 @@ def init_new_perceptrone(
         raise HTTPException(status_code=500, detail="Internal server error")
 
     return {
-        "perceptrone_id": project.id,
+        "project_id": project.id,
         "image_id": image_id,
     }
 

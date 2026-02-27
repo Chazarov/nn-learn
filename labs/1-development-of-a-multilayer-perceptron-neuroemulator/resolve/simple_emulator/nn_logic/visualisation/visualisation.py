@@ -152,8 +152,12 @@ def get_visualisation(perceptrone: List[List[List[float]]], color_theme:ColorThe
         cv2.circle(canvas, (wx, wy), WEIGHT_R, clr, -1, cv2.LINE_AA)
 
     for nx, ny in neuron_pts:
-        cv2.circle(canvas, (nx, ny), NEURON_R, (255, 255, 255), -1, cv2.LINE_AA)
-        cv2.circle(canvas, (nx, ny), NEURON_R, (0, 0, 0), 2, cv2.LINE_AA)
+        # cv2.circle(canvas, (nx, ny), NEURON_R, (255, 255, 255), -1, cv2.LINE_AA)
+        # cv2.circle(canvas, (nx, ny), NEURON_R, (0, 0, 0), 2, cv2.LINE_AA)
+        cv2.rectangle(canvas, 
+              (nx - NEURON_R, ny - NEURON_R), 
+              (nx + NEURON_R, ny + NEURON_R), 
+              (255, 255, 255), 2, cv2.LINE_AA)
 
     return canvas
 
