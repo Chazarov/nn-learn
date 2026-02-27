@@ -4,3 +4,8 @@ loguru
 uvicorn
 opencv-python-headless
 python-multipart
+numpy
+sqlalchemy
+psycopg2-binary
+PyJWT
+python-dotenv

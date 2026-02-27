@@ -1,13 +1,8 @@
-import json
-import os
+import traceback
 import random
-import uuid
-from typing import Any, Dict, List, cast
-
+from typing import Any, Dict, List, Tuple
 
 from fastapi import APIRouter, Body, Depends, HTTPException
-
-
 
 from nn_logic.activation import ActivationType, ACTIVATIONS
 from nn_logic.forwrdpropagation.forward_propagation import forward_propogation
@@ -16,19 +11,24 @@ from nn_logic.mathh.mv import apply_adjustments, init_perceptrone as build_perce
 from nn_logic.training.backpropagation import BackPropagation
 from nn_logic.visualisation.visualisation import get_visualisation, ColorTheme
 from models.csv_file import CsvFileData
-from models.progect_nn import NNData, Project, ProjectWithData
+from models.progect_nn import NNData, ProjectWithData
 
 from container import csv_service, auth_service, project_service
+from exceptions.auth_exception import AuthException
+from exceptions.not_found import NotFoundException
+from exceptions.domain import DomainException
+from exceptions.internal_server_exception import InternalServerException
+from log import logger
 
 from api.handlers.tools import oauth2_scheme
 
-
-
 router = APIRouter()
 
-DATA_WEIGHTS = "data/weights"
-DATA_LEARN = "data/learn"
+Sample = Tuple[List[float], List[float]]
 
+
+def _csv_data_to_samples(data: CsvFileData) -> List[Sample]:
+    return [(row.signs_vector, row.class_mark) for row in data.rows]
 
 
 @router.post("/init")
@@ -37,31 +37,39 @@ def init_new_perceptrone(
     file_id: str = Body(...),
     hidden_layers_architecture: List[int] = Body(...),
 ) -> Dict[str, Any]:
-    path = os.path.join(DATA_LEARN, f"{file_id}.csv")
-    if not os.path.exists(path):
-        raise HTTPException(404, f"File {file_id} not found")
+    try:
+        payload = auth_service.token_validate(token)
+    except AuthException as e:
+        raise HTTPException(status_code=401, detail=str(e))
 
-    payload = auth_service.token_validate(token)
+    try:
+        data: CsvFileData = csv_service.get_data(file_id=file_id, user_id=payload.user_id)
+    except NotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except InternalServerException:
+        raise HTTPException(status_code=500, detail="Internal server error")
 
-    data:CsvFileData = csv_service.get_data(file_id=file_id, user_id=payload.user_id)
+    try:
+        input_layer_size: int = len(data.rows[0].signs_vector)
+        output_layer_size: int = len(data.classes)
 
-    input_layer_size: int = len(data.rows[0].signs_vector)
-    output_layer_size: int = len(data.classes)
+        architecture: List[int] = [input_layer_size] + hidden_layers_architecture + [output_layer_size]
+        perceptron: List[List[List[float]]] = build_perceptrone(architecture)
 
-    architecture: List[int] = [input_layer_size] + hidden_layers_architecture + [output_layer_size]
+        raw_samples: List[Sample] = _csv_data_to_samples(data)
+        _, mins, maxs = normalize(raw_samples)
 
-    perceptron: List[List[List[float]]] = build_perceptrone(architecture)
+        nn_data: NNData = NNData(weights=perceptron, mins=mins, maxs=maxs, classes=data.classes)
+        img = get_visualisation(perceptron, ColorTheme.DARK)
 
-    _, mins, maxs = normalize(raw_data) # Исправить процесс инициализации 
-
-    nn_data :NNData = NNData(weights=perceptron, mins=mins, maxs=maxs, classes = data.classes)
-
-
-    img = get_visualisation(perceptron, ColorTheme.DARK)
-
-    project = project_service.create(payload.user_id, nn_data=nn_data, csv_file_id=file_id)
-    image_id = project_service.save_image(payload.user_id, project.id, img)
-
+        project = project_service.create(payload.user_id, nn_data=nn_data, csv_file_id=file_id)
+        image_id = project_service.save_image(payload.user_id, project.id, img)
+    except DomainException as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"error while initializing perceptron: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Internal server error")
 
     return {
         "perceptrone_id": project.id,
@@ -77,39 +85,47 @@ def learn_perceptrone(
     epochs: int = Body(...),
     learning_rate: float = Body(...),
 ) -> Dict[str, Any]:
+    try:
+        payload = auth_service.token_validate(token)
+    except AuthException as e:
+        raise HTTPException(status_code=401, detail=str(e))
 
-    payload = auth_service.token_validate(token)
+    try:
+        p: ProjectWithData = project_service.get_project(payload.user_id, project_id)
+        samples_data: CsvFileData = csv_service.get_data(p.csv_file_id, payload.user_id)
+    except NotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except InternalServerException:
+        raise HTTPException(status_code=500, detail="Internal server error")
 
-    p:ProjectWithData = project_service.get_project(payload.user_id, project_id)
-    samples_data: CsvFileData = csv_service.get_data(p.csv_file_id, payload.user_id)
-    
+    try:
+        raw_samples: List[Sample] = _csv_data_to_samples(samples_data)
+        normalized_samples, _, _ = normalize(raw_samples)
 
-    activation = ACTIVATIONS[activation_type]()
-    bp = BackPropagation(MSE(), learning_rate, p.nn_data.weights, activation)
+        activation = ACTIVATIONS[activation_type]()
+        bp = BackPropagation(MSE(), learning_rate, p.nn_data.weights, activation)
 
+        for _ in range(epochs):
+            random.shuffle(normalized_samples)
+            for x, y in normalized_samples:
+                outputs, weighted_sums = forward_propogation(x, p.nn_data.weights, activation)
+                adjustments = bp.training_iteration_calculate(x, outputs, y, weighted_sums)
+                apply_adjustments(p.nn_data.weights, adjustments)
 
-    # Здесь исправить обучение. Оно должно быть по данным из полученных схем (samples_data)
-    random.shuffle(data)
-
-    for _ in range(epochs):
-        random.shuffle(data)
-        for x, y in data:
-            outputs, weighted_sums = forward_propogation(x, p.nn_data.weights, activation)
-            adjustments = bp.training_iteration_calculate(x, outputs, y, weighted_sums)
-            apply_adjustments(p.nn_data.weights, adjustments)
-
-    img = get_visualisation(p.nn_data.weights, ColorTheme.DARK)
-
-
-
-    image_id = project_service.save_image(payload.user_id, p.id, img)
-    project_service.update_weights(payload.user_id, p.id, p.nn_data.weights) #Этот метод не законен. Закончи его реализацию
-
+        img = get_visualisation(p.nn_data.weights, ColorTheme.DARK)
+        image_id = project_service.save_image(payload.user_id, p.id, img)
+        project_service.update_weights(payload.user_id, p.id, p.nn_data.weights)
+    except DomainException as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"error while learning perceptron: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Internal server error")
 
     return {
-            "project_id": p.id,
-            "image_id": image_id,
-            }
+        "project_id": p.id,
+        "image_id": image_id,
+    }
 
 
 @router.post("/get_answer")
@@ -119,46 +135,81 @@ def get_answer(
     input_vector: List[float] = Body(...),
     activation_type: ActivationType = Body(...),
 ) -> Dict[str, Any]:
-    path = os.path.join(DATA_WEIGHTS, f"{perceptrone_id}.json")
-    if not os.path.exists(path):
-        raise HTTPException(404, f"Weights {perceptrone_id} not found")
+    try:
+        payload = auth_service.token_validate(token)
+    except AuthException as e:
+        raise HTTPException(status_code=401, detail=str(e))
 
-    with open(path) as f:
-        saved: Any = json.load(f)
+    try:
+        p: ProjectWithData = project_service.get_project(payload.user_id, perceptrone_id)
+    except NotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except InternalServerException:
+        raise HTTPException(status_code=500, detail="Internal server error")
 
-    perceptron = cast(List[List[List[float]]], saved["weights"])
-    mins = cast(List[float], saved["mins"])
-    maxs = cast(List[float], saved["maxs"])
-    classes = cast(List[str], saved["classes"])
-    activation = ACTIVATIONS[activation_type]()
+    try:
+        activation = ACTIVATIONS[activation_type]()
+        mins = p.nn_data.mins
+        maxs = p.nn_data.maxs
+        classes = p.nn_data.classes
 
-    xn: List[float] = [(input_vector[i] - mins[i]) / (maxs[i] - mins[i]) for i in range(len(input_vector))]
-    output_vector, _ = forward_propogation(xn, perceptron, activation)
+        xn: List[float] = [
+            (input_vector[i] - mins[i]) / (maxs[i] - mins[i])
+            for i in range(len(input_vector))
+        ]
+        output_vector, _ = forward_propogation(xn, p.nn_data.weights, activation)
 
-    predicted: str = classes[output_vector.index(max(output_vector))]
-    confidences: Dict[str, float] = {classes[i]: round(output_vector[i], 4) for i in range(len(classes))}
+        predicted: str = classes[output_vector.index(max(output_vector))]
+        confidences: Dict[str, float] = {
+            classes[i]: round(output_vector[i], 4) for i in range(len(classes))
+        }
+    except DomainException as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"error while getting answer: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Internal server error")
 
     return {
-                "predicted": predicted, 
-                "confidences": confidences, 
-                "output": output_vector
-            }
-
-
-
-@router.get("/weights")
-async def get_all_weights(token: str = Depends(oauth2_scheme),) -> Dict[str, Any]:
-    os.makedirs(DATA_WEIGHTS, exist_ok=True)
-    file_names = [n for n in os.listdir(DATA_WEIGHTS) if n.endswith(".json")]
-    return {
-        "files": [{"id": n.replace(".json", ""), "name": n, "object_type":"file_json"} for n in file_names]
+        "predicted": predicted,
+        "confidences": confidences,
+        "output": output_vector,
     }
 
 
-@router.delete("/weights/{perceptrone_id}")
-async def delete_weights(perceptrone_id: str) -> Dict[str, Any]:
-    path: str = os.path.join(DATA_WEIGHTS, f"{perceptrone_id}.json")
-    if not os.path.exists(path):
-        raise HTTPException(404, f"Weights '{perceptrone_id}' not found")
-    os.remove(path)
-    return {"deleted": perceptrone_id}
+@router.get("/projects")
+def get_all_projects(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+    try:
+        payload = auth_service.token_validate(token)
+    except AuthException as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+    try:
+        projects = project_service.get_projects(payload.user_id)
+        return {"projects": [p.model_dump() for p in projects]}
+    except DomainException as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"error while getting projects: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.delete("/projects/{project_id}")
+def delete_project(
+    project_id: str,
+    token: str = Depends(oauth2_scheme),
+) -> Dict[str, Any]:
+    try:
+        payload = auth_service.token_validate(token)
+    except AuthException as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+    try:
+        project_service.delete_project(payload.user_id, project_id)
+    except NotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except InternalServerException:
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+    return {"deleted": project_id}

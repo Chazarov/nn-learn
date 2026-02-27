@@ -8,7 +8,7 @@ from models.csv_file import CsvFileData, SampleModel
 
 class CsvDiskRepository:
 
-    def __init__(self, directory:str):
+    def __init__(self, directory: str) -> None:
         self.directory = directory
 
     def save(self, file_id: str, content: bytes) -> str:
@@ -34,34 +34,28 @@ class CsvDiskRepository:
             raise NotFoundException(f"CSV file '{file_id}' not found")
         os.remove(path)
 
-    def get_data(self, file_id:str):
-        path:str = self.get_file(file_id)
-        return self.load_csv(path)
-
-    def load_csv(self, file_id:str) -> CsvFileData:
-
+    def get_data(self, file_id: str) -> CsvFileData:
         path = self.get_file(file_id)
         rows: List[SampleModel] = []
         classes: List[str] = []
-
 
         with open(path, newline="") as f:
             reader = csv.DictReader(f)
             columns: List[str] = list(reader.fieldnames or [])
             feature_cols = columns[1:-1]
             label_col = columns[-1]
+
             for row in reader:
                 label = str(row[label_col])
                 if label not in classes:
                     classes.append(label)
-            f.seek(0)
-            next(csv.reader(f))
-            reader2 = csv.DictReader(open(path, newline=""))
-            for row in reader2:
+
+        with open(path, newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
                 x: List[float] = [float(row[c]) for c in feature_cols]
                 label_idx = classes.index(str(row[label_col]))
                 y: List[float] = [1.0 if i == label_idx else 0.0 for i in range(len(classes))]
                 rows.append(SampleModel(signs_vector=x, class_mark=y))
 
-        result = CsvFileData(rows = rows, classes=classes)
-        return result
+        return CsvFileData(rows=rows, classes=classes)

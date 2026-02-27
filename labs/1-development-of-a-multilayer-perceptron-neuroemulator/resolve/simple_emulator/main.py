@@ -1,7 +1,11 @@
 import uvicorn
 from fastapi import FastAPI
 
+from database import engine, Base
+import models.db_models  # noqa: F401 — регистрация таблиц в Base.metadata
 from api.routes import main_router
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Multilayer Perceptron API")
 app.include_router(main_router)
