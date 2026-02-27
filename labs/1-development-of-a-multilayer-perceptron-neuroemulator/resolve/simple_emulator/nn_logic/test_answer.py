@@ -1,8 +1,8 @@
 import json
 from typing import Any, List, cast
 
-from forwrdpropagation.forward_propagation import forward_propogation
-from activation import Sigmoid
+from nn_logic.forwrdpropagation.forward_propagation import forward_propogation
+from nn_logic.activation import Sigmoid
 
 WEIGHTS_PATH = "data/weights.json"
 SPECIES: List[str] = ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]

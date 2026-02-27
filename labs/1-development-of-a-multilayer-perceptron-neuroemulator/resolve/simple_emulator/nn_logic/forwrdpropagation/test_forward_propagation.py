@@ -1,7 +1,7 @@
 from typing import Any, List
 
-from forwrdpropagation.forward_propagation import forward_propogation
-from activation import Rellu
+from nn_logic.forwrdpropagation.forward_propagation import forward_propogation
+from nn_logic.activation import Rellu
 from exceptions.test_exception import TestException
 from log import logger
 

@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from loss import ILoss
+from nn_logic.loss import ILoss
 
 
 class ITrainingAlgorithm(ABC):

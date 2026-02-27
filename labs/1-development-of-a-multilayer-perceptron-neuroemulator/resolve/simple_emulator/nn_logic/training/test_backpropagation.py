@@ -1,10 +1,10 @@
 from typing import Any, List
 
-from training.backpropagation import BackPropagation
-from activation import Rellu
+from nn_logic.training.backpropagation import BackPropagation
+from nn_logic.activation import Rellu
 from exceptions.test_exception import TestException
 from log import logger
-from loss import MSE
+from nn_logic.loss import MSE
 
 
 def test_backpropagation_iteration():

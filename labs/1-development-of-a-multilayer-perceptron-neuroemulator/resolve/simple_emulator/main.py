@@ -2,8 +2,8 @@ import uvicorn
 from fastapi import FastAPI
 
 from database import engine, Base
-import models.db_models  # noqa: F401 — регистрация таблиц в Base.metadata
-from api.routes import main_router
+import models.db_models # type: ignore # noqa: F401 — регистрация таблиц в Base.metadata
+from ports.api.routes import main_router
 
 Base.metadata.create_all(bind=engine)
 

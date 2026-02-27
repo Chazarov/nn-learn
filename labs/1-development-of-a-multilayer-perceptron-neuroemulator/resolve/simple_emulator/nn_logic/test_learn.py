@@ -3,11 +3,11 @@ import json
 import random
 from typing import List, Tuple
 
-from forwrdpropagation.forward_propagation import forward_propogation
-from training.backpropagation import BackPropagation
-from activation import Sigmoid
-from loss import MSE
-from mathh.mv import normalize, apply_adjustments
+from nn_logic.forwrdpropagation.forward_propagation import forward_propogation
+from nn_logic.training.backpropagation import BackPropagation
+from nn_logic.activation import Sigmoid
+from nn_logic.loss import MSE
+from nn_logic.mathh.mv import normalize, apply_adjustments
 
 WEIGHTS_PATH = "data/weights.json"
 EPOCHS = 500

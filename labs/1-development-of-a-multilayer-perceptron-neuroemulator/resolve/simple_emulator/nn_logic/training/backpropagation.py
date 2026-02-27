@@ -2,10 +2,10 @@
 from typing import List
 
 
-from training.itraining_algorithm import ITrainingAlgorithm
-from loss import ILoss
-from activation import IActivation
-from mathh import mv
+from nn_logic.training.itraining_algorithm import ITrainingAlgorithm
+from nn_logic.loss import ILoss
+from nn_logic.activation import IActivation
+from nn_logic.mathh import mv
 
 
 # from config import config

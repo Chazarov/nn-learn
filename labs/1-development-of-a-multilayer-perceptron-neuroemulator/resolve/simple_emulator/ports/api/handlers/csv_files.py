@@ -1,13 +1,13 @@
 import traceback
 from typing import Any, Dict
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile
 
 from exceptions.auth_exception import AuthException
 from exceptions.not_found import NotFoundException
 from exceptions.domain import DomainException
 from exceptions.internal_server_exception import InternalServerException
-from api.handlers.tools import oauth2_scheme
+from ports.api.handlers.tools import oauth2_scheme
 from container import csv_service, auth_service
 from log import logger
 
@@ -56,7 +56,7 @@ async def get_all_samples(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]
 
 
 @router.delete("/{file_id}")
-async def delete_csv(file_id: str = Query(...),
+async def delete_csv(file_id: str = Path(...),
                      token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
     try:
         payload = auth_service.token_validate(token)

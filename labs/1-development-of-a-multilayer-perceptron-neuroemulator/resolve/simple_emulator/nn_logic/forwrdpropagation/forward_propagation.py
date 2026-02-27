@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 from log import logger
-from activation import IActivation
+from nn_logic.activation import IActivation
 
 
 def forward_propogation(

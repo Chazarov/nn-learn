@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import numpy.typing as npt
 
-from .visualisation import get_visualisation, ColorTheme
+from nn_logic.visualisation.visualisation import get_visualisation, ColorTheme
 
 
 def test_visualisation_iris() -> None:

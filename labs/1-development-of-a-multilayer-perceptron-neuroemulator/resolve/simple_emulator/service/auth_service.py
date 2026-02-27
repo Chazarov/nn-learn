@@ -10,7 +10,6 @@ from models.user import User
 from exceptions.auth_exception import AuthException
 from exceptions.domain import DomainException
 from exceptions.internal_server_exception import InternalServerException
-from models.auth import TokenPayload
 from log import logger
 
 
