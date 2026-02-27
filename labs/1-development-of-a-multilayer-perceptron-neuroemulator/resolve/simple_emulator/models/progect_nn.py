@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Project(BaseModel):
@@ -10,7 +10,7 @@ class Project(BaseModel):
     csv_file_id:str
 
 class NNData(BaseModel):
-    weights: List[List[List[float]]]
+    weights: List[List[List[float]]]= Field(exclude=True)
     input_size: int
     mins: List[float]
     maxs: List[float]
@@ -19,5 +19,6 @@ class NNData(BaseModel):
     
 class ProjectWithData(Project):
     nn_data:NNData
+
 
 

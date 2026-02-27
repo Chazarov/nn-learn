@@ -78,7 +78,17 @@ def init_new_perceptrone(
         raise HTTPException(status_code=500, detail="Internal server error")
 
     return {
-        "project_id": project.id,
+        "project": ProjectWithData(id = project.id, 
+                                   user_id = payload.user_id, 
+                                   created_at=project.created_at,
+                                   csv_file_id=file_id,
+                                   nn_data=NNData(weights=perceptron, 
+                                                  input_size=nn_data.input_size,
+                                                  mins=nn_data.mins,
+                                                  maxs=nn_data.maxs,
+                                                  classes=nn_data.classes),
+                                                  
+                                                  ),
         "image_id": image_id,
     }
 
@@ -127,9 +137,9 @@ def learn_perceptrone(
         logger.error(f"error while learning perceptron: {e}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Internal server error")
-
+    
     return {
-        "project_id": p.id,
+        "project": p.model_dump(),
         "image_id": image_id,
     }
 
@@ -211,9 +221,7 @@ def get_project_data(token: str = Depends(oauth2_scheme),
 
     try:
         project = project_service.get_project(payload.user_id, project_id)
-        prooject_dict =  project.model_dump()
-        prooject_dict["nn_data"]["weights"] = None
-        return {"project": prooject_dict}
+        return {"project": project.model_dump()}
     except DomainException as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

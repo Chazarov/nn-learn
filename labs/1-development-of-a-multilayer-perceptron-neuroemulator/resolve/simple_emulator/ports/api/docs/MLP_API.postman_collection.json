@@ -93,7 +93,8 @@
               "mode": "raw",
               "options": { "raw": { "language": "json" } },
               "raw": "{\n  \"file_id\": \"{{file_id}}\",\n  \"hidden_layers_architecture\": [6]\n}"
-            }
+            },
+            "description": "Возвращает объект project (все данные проекта без весов: id, user_id, csv_file_id, created_at, nn_data с input_size, mins, maxs, classes) и image_id."
           }
         },
         {
@@ -141,7 +142,8 @@
           "request": {
             "method": "GET",
             "url": "{{base_url}}/actions/project/{{project_id}}",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "description": "Возвращает все данные проекта (метаданные и nn_data: input_size, mins, maxs, classes). Веса в ответ не включаются."
           }
         },
         {
