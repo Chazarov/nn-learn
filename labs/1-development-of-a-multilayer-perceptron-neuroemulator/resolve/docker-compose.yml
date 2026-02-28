@@ -34,13 +34,13 @@ services:
 
   frontend:
     build: ./frontend
-    # ports:
-    #   - "3000:80"
+    ports:
+      - "3000:80"
     depends_on:
       - mlp
     networks:
       - default
-      - caddy_net
+      # - caddy_net
     container_name: nnemulator_frontend
 
 volumes:
@@ -48,6 +48,6 @@ volumes:
   mlp_data:
 
 
-networks:
-  caddy_net:
-    external: true
+# networks:
+#   caddy_net:
+#     external: true

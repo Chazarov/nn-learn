@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import * as api from "../api";
 
-const HELP_URL = "https://github.com/Chazarov/nn-learn/tree/master/labs/1-development-of-a-multilayer-perceptron-neuroemulator";
+const HELP_URL = "https://github.com/Chazarov/nn-learn/tree/master/labs/1-development-of-a-multilayer-perceptron-neuroemulator/resolve";
 const MAX_LAYERS = 10;
 const MAX_NEURONS = 20;
 
@@ -27,7 +27,17 @@ export default function MainPage({ token, onLogout }) {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState(null);
 
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isNarrow, setIsNarrow] = useState(false);
+
   const csvInputRef = useRef(null);
+
+  useEffect(() => {
+    const check = () => setIsNarrow(window.innerWidth < 700);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const loadProjects = useCallback(async () => {
     try {
@@ -111,6 +121,15 @@ export default function MainPage({ token, onLogout }) {
     try {
       await api.deleteCsv(token, fileId);
       loadCsvFiles();
+    } catch (err) {
+      setStatusMsg({ type: "error", text: err.message });
+    }
+  }
+
+  async function handleDownloadCsv(e, fileId) {
+    e.stopPropagation();
+    try {
+      await api.downloadCsv(token, fileId);
     } catch (err) {
       setStatusMsg({ type: "error", text: err.message });
     }
@@ -249,7 +268,19 @@ export default function MainPage({ token, onLogout }) {
 
       <div className="main-content">
         {/* SIDEBAR */}
-        <aside className="sidebar">
+        {isNarrow && (
+          <button
+            className={`sidebar-tab ${sidebarOpen ? "tab-right" : "tab-left"}`}
+            onClick={() => setSidebarOpen((v) => !v)}
+            title={sidebarOpen ? "Свернуть" : "Развернуть"}
+            aria-label={sidebarOpen ? "Свернуть" : "Развернуть"}
+          >
+            {sidebarOpen ? "‹" : "›"}
+          </button>
+        )}
+        <aside
+          className={`sidebar ${sidebarOpen ? "" : "sidebar-collapsed"} ${isNarrow ? "sidebar-overlay" : ""}`}
+        >
           <div className="sidebar-section">
             <h2>Projects</h2>
             <ul className="sidebar-list">
@@ -281,14 +312,23 @@ export default function MainPage({ token, onLogout }) {
             <h2>CSV Files</h2>
             <ul className="sidebar-list">
               {csvFiles.map((f) => (
-                <li key={f.id} className="sidebar-item">
-                  <span className="item-name">{f.filename || f.id}</span>
-                  <span
-                    className="delete-btn"
-                    onClick={(e) => handleDeleteCsv(e, f.id)}
-                    title="Delete"
-                  >
-                    ✕
+                <li
+                  key={f.id}
+                  className="sidebar-item csv-file-item"
+                  onClick={(e) => handleDownloadCsv(e, f.id)}
+                >
+                  <span className="item-name">{f.name || f.id}</span>
+                  <span className="item-actions">
+                    <span className="icon-btn download-btn" title="Download">
+                      ↓
+                    </span>
+                    <span
+                      className="delete-btn"
+                      onClick={(e) => handleDeleteCsv(e, f.id)}
+                      title="Delete"
+                    >
+                      ✕
+                    </span>
                   </span>
                 </li>
               ))}
@@ -311,7 +351,13 @@ export default function MainPage({ token, onLogout }) {
         </aside>
 
         {/* WORKSPACE */}
-        <div className="workspace">
+        <div
+          className="workspace"
+          style={{
+            marginLeft:
+              isNarrow && !sidebarOpen ? 0 : 260,
+          }}
+        >
           {loading && <div className="loading">Processing...</div>}
 
           {statusMsg && (
@@ -376,7 +422,7 @@ export default function MainPage({ token, onLogout }) {
                       <option value="">-- select --</option>
                       {csvFiles.map((f) => (
                         <option key={f.id} value={f.id}>
-                          {f.filename || f.id}
+                          {f.name || f.id}
                         </option>
                       ))}
                     </select>

@@ -18,6 +18,7 @@ Authorization: Bearer <token>
 | `POST` | `/auth/login` | — | Вход в систему, получение токена |
 | `POST` | `/csv/upload` | Bearer | Загрузить CSV-файл с обучающей выборкой |
 | `GET` | `/csv/` | Bearer | Список CSV-файлов текущего пользователя |
+| `GET` | `/csv/{file_id}` | Bearer | Скачать CSV-файл по id |
 | `DELETE` | `/csv/{file_id}` | Bearer | Удалить CSV-файл по id |
 | `POST` | `/actions/init` | Bearer | Инициализировать перцептрон случайными весами |
 | `POST` | `/actions/learn/` | Bearer | Обучить перцептрон |
@@ -124,6 +125,25 @@ Authorization: Bearer <token>
   ]
 }
 ```
+
+---
+
+### GET `/csv/{file_id}`
+
+Скачать CSV-файл по id.
+
+**Path параметры:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `file_id` | string | ID файла из `GET /csv/` |
+
+**Response:** CSV-файл (`text/csv`) с заголовком `Content-Disposition` для скачивания.
+
+**Errors:**
+- `401` — невалидный или просроченный токен
+- `403` — доступ запрещён
+- `404` — файл не найден или не принадлежит пользователю
 
 ---
 

@@ -2,6 +2,7 @@ import traceback
 from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile
+from fastapi.responses import FileResponse
 
 from exceptions.auth_exception import AuthException
 from exceptions.not_found import NotFoundException
@@ -80,3 +81,28 @@ async def delete_csv(file_id: str = Path(...),
         raise HTTPException(status_code=500, detail="Internal server error")
 
     return {"deleted": file_id}
+
+@router.get("/{file_id}") 
+async def get_csv(file_id: str = Path(...),
+                  token: str = Depends(oauth2_scheme)) -> FileResponse:
+    try:
+        payload = auth_service.token_validate(token)
+    except AuthException as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+    try:
+        file_path, filename = csv_service.get_file_for_download(payload.user_id, file_id)
+    except ForbiddenException as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except NotFoundException as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except InternalServerException:
+        raise HTTPException(status_code=500, detail="Internal server error")
+    except DomainException as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"error while getting csv: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+    return FileResponse(file_path, media_type="text/csv", filename=filename)

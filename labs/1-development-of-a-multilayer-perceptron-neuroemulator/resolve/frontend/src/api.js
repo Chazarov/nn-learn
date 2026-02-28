@@ -139,6 +139,29 @@ export async function deleteCsv(token, fileId) {
   return handleResponse(res);
 }
 
+export async function downloadCsv(token, fileId) {
+  const res = await fetch(`${BASE}/csv/${fileId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || `Error ${res.status}`);
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition");
+  let filename = `${fileId}.csv`;
+  if (disposition) {
+    const match = disposition.match(/filename="?([^";\n]+)"?/);
+    if (match) filename = match[1];
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export async function fetchImageBlob(token, imageId) {
   const res = await fetch(`${BASE}/images/${imageId}`, {
     headers: { Authorization: `Bearer ${token}` },

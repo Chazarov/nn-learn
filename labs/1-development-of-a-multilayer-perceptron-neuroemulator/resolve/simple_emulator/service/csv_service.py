@@ -1,6 +1,6 @@
 import os
 import traceback
-from typing import List
+from typing import List, Tuple
 
 from models.csv_file import CsvFile, CsvFileData
 from repository.csv_disk_repository import CsvDiskRepository
@@ -57,3 +57,13 @@ class CsvService:
     def get_data(self, file_id: str, user_id: str) -> CsvFileData:
         self.relative_repo.get_by_id(file_id, user_id)
         return self.disk_repo.get_data(file_id)
+    
+    def get_file(self, user_id: str, file_id: str) -> str:
+        self.relative_repo.get_by_id(file_id, user_id)
+        return self.disk_repo.get_file(file_id)
+
+    def get_file_for_download(self, user_id: str, file_id: str) -> Tuple[str, str]:
+        csv_file = self.relative_repo.get_by_id(file_id, user_id)
+        path = self.disk_repo.get_file(file_id)
+        return path, csv_file.name
+        

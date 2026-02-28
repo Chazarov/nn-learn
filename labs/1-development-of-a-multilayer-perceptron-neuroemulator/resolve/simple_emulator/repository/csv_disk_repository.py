@@ -59,3 +59,4 @@ class CsvDiskRepository:
                 rows.append(SampleModel(signs_vector=x, class_mark=y))
 
         return CsvFileData(rows=rows, classes=classes)
+    
