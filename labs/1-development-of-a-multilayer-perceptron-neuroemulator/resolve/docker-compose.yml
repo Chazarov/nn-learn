@@ -40,7 +40,7 @@ services:
       - mlp
     networks:
       - default
-      # - caddy_net
+      - caddy_net
     container_name: nnemulator_frontend
 
 volumes:
