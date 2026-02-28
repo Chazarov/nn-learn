@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import * as api from "../api";
 
-const HELP_URL = "https://example.com/help";
+const HELP_URL = "https://github.com/Chazarov/nn-learn/tree/master/labs/1-development-of-a-multilayer-perceptron-neuroemulator";
 const MAX_LAYERS = 10;
 const MAX_NEURONS = 20;
 

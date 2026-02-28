@@ -17,8 +17,8 @@ services:
 
   mlp:
     build: ./simple_emulator
-    ports:
-      - "8000:8000"
+    # ports:
+    #   - "8000:8000"
     env_file:
       - ./simple_emulator/.env
     environment:
@@ -29,6 +29,22 @@ services:
       postgres:
         condition: service_healthy
 
+  frontend:
+    build: ./frontend
+    # ports:
+    #   - "3000:80"
+    depends_on:
+      - mlp
+    networks:
+      - default
+      - caddy_net
+    container_name: nnemulator_frontend
+
 volumes:
   postgres_data:
   mlp_data:
+
+
+networks:
+  caddy_net:
+    external: true
