@@ -63,10 +63,6 @@ yarn-error.log*
 build/
 dist/
 
-# Docker
-.dockerignore
-Dockerfile*
-docker-compose*
 
 # IDE
 .vscode/

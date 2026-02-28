@@ -29,6 +29,9 @@ services:
       postgres:
         condition: service_healthy
 
+
+
+
   frontend:
     build: ./frontend
     # ports:
