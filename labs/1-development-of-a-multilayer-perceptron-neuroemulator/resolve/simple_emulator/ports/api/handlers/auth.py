@@ -11,7 +11,7 @@ from exceptions.internal_server_exception import InternalServerException
 from exceptions.already_exists import AlreadyExists
 from models.auth import SignUpRequest, LoginRequest
 from log import logger
-from api.handlers.tools import oauth2_scheme
+from ports.api.handlers.tools import oauth2_scheme
 
 router = APIRouter()
 
