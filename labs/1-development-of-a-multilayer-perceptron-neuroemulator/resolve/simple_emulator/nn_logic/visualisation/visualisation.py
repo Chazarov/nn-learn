@@ -37,10 +37,10 @@ def _weight_to_bgr(value: float) -> Tuple[int, int, int]:
     return _COLORMAP[-1][1]
 
 
-def _grid_dims(perceptrone: List[List[List[float]]], q: int) -> Tuple[int, int]:
+def _grid_dims(perceptron: List[List[List[float]]], q: int) -> Tuple[int, int]:
     """Visual grid (rows, cols) for layer q depending on snake direction."""
-    nt = len(perceptrone[q])
-    ns = len(perceptrone[q][0])
+    nt = len(perceptron[q])
+    ns = len(perceptron[q][0])
     if q % 4 in (0, 2):  # DOWN / UP — transposed
         return ns, nt
     return nt, ns  # RIGHT — direct
@@ -51,23 +51,23 @@ class ColorTheme(str, Enum):
     
 
 
-def get_visualisation(perceptrone: List[List[List[float]]], color_theme:ColorTheme = ColorTheme.WHITE) -> npt.NDArray[np.uint8]:
-    num_layers: int = len(perceptrone)
+def get_visualisation(perceptron: List[List[List[float]]], color_theme:ColorTheme = ColorTheme.WHITE) -> npt.NDArray[np.uint8]:
+    num_layers: int = len(perceptron)
     if num_layers == 0:
         return np.full((100, 100, 3), 245, dtype=np.uint8)
 
-    neuron_counts: List[int] = [len(perceptrone[0][0])]
+    neuron_counts: List[int] = [len(perceptron[0][0])]
     for q in range(num_layers):
-        neuron_counts.append(len(perceptrone[q]))
+        neuron_counts.append(len(perceptron[q]))
 
     def is_top(q: int) -> bool:
         return q % 4 in (0, 3)
 
     def _top_rows() -> Generator[int, None, None]:
-        return (_grid_dims(perceptrone, q)[0] for q in range(num_layers) if is_top(q))
+        return (_grid_dims(perceptron, q)[0] for q in range(num_layers) if is_top(q))
 
     def _bot_rows() -> Generator[int, None, None]:
-        return (_grid_dims(perceptrone, q)[0] for q in range(num_layers) if not is_top(q))
+        return (_grid_dims(perceptron, q)[0] for q in range(num_layers) if not is_top(q))
 
     max_top: int = max(_top_rows(), default=0)
     max_bot: int = max(_bot_rows(), default=0)
@@ -92,7 +92,7 @@ def get_visualisation(perceptrone: List[List[List[float]]], color_theme:ColorThe
         qv: int = pair_start
         qh: Optional[int] = pair_start + 1 if pair_start + 1 < num_layers else None
 
-        rows_v, cols_v = _grid_dims(perceptrone, qv)
+        rows_v, cols_v = _grid_dims(perceptron, qv)
         n_src: int = neuron_counts[qv]
 
         # --- source neurons (vertical column) ---
@@ -108,7 +108,7 @@ def get_visualisation(perceptrone: List[List[List[float]]], color_theme:ColorThe
             for c in range(cols_v):
                 wx: int = gx + c * CELL
                 wy: int = y_top(r, rows_v) if is_top(qv) else y_bot(r)
-                weight_pts.append((wx, wy, perceptrone[qv][c][r]))
+                weight_pts.append((wx, wy, perceptron[qv][c][r]))
 
         # --- middle-line neurons ---
         n_mid: int = neuron_counts[qv + 1]
@@ -117,13 +117,13 @@ def get_visualisation(perceptrone: List[List[List[float]]], color_theme:ColorThe
 
         # --- horizontal weight grid (RIGHT) ---
         if qh is not None:
-            rows_h, cols_h = _grid_dims(perceptrone, qh)
+            rows_h, cols_h = _grid_dims(perceptron, qh)
 
             for r in range(rows_h):
                 for c in range(cols_h):
                     wx = gx + c * CELL
                     wy = y_top(r, rows_h) if is_top(qh) else y_bot(r)
-                    weight_pts.append((wx, wy, perceptrone[qh][r][c]))
+                    weight_pts.append((wx, wy, perceptron[qh][r][c]))
 
             # target neurons of RIGHT grid (vertical column to the right)
             n_tgt: int = neuron_counts[qh + 1]

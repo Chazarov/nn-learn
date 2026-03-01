@@ -45,27 +45,27 @@ def init_perceptron() -> List[List[List[float]]]:
 
 
 
-
-raw_data: List[Sample] = load_data()
-data, mins, maxs = normalize(raw_data)
-random.shuffle(data)
-
-perceptron: List[List[List[float]]] = init_perceptron()
-activation = Sigmoid()
-bp = BackPropagation(MSE(), LEARNING_RATE, perceptron, activation)
-
-for epoch in range(EPOCHS):
+def test_learn():
+    raw_data: List[Sample] = load_data()
+    data, mins, maxs = normalize(raw_data)
     random.shuffle(data)
-    total_loss: float = 0.0
-    for x, y in data:
-        outputs, weighted_sums = forward_propogation(x, perceptron, activation)
-        adjustments = bp.training_iteration_calculate(x, outputs, y, weighted_sums)
-        apply_adjustments(perceptron, adjustments)
-        total_loss += sum((y[i] - outputs[i]) ** 2 for i in range(len(y)))
-    if (epoch + 1) % 100 == 0:
-        print(f"Epoch {epoch + 1}/{EPOCHS}  loss={total_loss / len(data):.4f}")
 
-with open(WEIGHTS_PATH, "w") as f:
-    json.dump({"weights": perceptron, "mins": mins, "maxs": maxs}, f)
+    perceptron: List[List[List[float]]] = init_perceptron()
+    activation = Sigmoid()
+    bp = BackPropagation(MSE(), LEARNING_RATE, perceptron, activation)
 
-print(f"Weights saved to {WEIGHTS_PATH}")
+    for epoch in range(EPOCHS):
+        random.shuffle(data)
+        total_loss: float = 0.0
+        for x, y in data:
+            outputs, weighted_sums = forward_propogation(x, perceptron, activation)
+            adjustments = bp.training_iteration_calculate(x, outputs, y, weighted_sums)
+            apply_adjustments(perceptron, adjustments)
+            total_loss += sum((y[i] - outputs[i]) ** 2 for i in range(len(y)))
+        if (epoch + 1) % 100 == 0:
+            print(f"Epoch {epoch + 1}/{EPOCHS}  loss={total_loss / len(data):.4f}")
+
+    with open(WEIGHTS_PATH, "w") as f:
+        json.dump({"weights": perceptron, "mins": mins, "maxs": maxs}, f)
+
+    print(f"Weights saved to {WEIGHTS_PATH}")

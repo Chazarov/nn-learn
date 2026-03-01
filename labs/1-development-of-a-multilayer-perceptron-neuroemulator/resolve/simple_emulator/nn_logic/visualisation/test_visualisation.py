@@ -18,9 +18,9 @@ def test_visualisation_iris() -> None:
     with open(data_path, "r") as f:
         data: Dict[str, Any] = json.load(f)
 
-    perceptrone: List[List[List[float]]] = data["weights"]
+    perceptron: List[List[List[float]]] = data["weights"]
 
-    img: npt.NDArray[np.uint8] = get_visualisation(perceptrone, ColorTheme.DARK)
+    img: npt.NDArray[np.uint8] = get_visualisation(perceptron, ColorTheme.DARK)
 
     out_path: str = os.path.join(os.path.dirname(__file__), "visualisation_example.png")
     cv2.imwrite(out_path, img)

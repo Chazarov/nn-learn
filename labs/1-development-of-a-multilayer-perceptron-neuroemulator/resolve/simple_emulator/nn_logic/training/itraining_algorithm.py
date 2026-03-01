@@ -12,13 +12,13 @@ class ITrainingAlgorithm(ABC):
     def training_iteration_calculate(self, inputs: List[float], outputs: List[float], expected: List[float], weighted_sums_output: List[List[float]]) -> List[List[List[float]]]: pass
 
     @abstractmethod
-    def get_looses(self): pass
+    def get_losses(self): pass
         
     @abstractmethod
     def get_output_loss(self): pass
 
     @abstractmethod
-    def get_loos_function(self) -> ILoss: pass 
+    def get_loss_function(self) -> ILoss: pass 
 
     @abstractmethod
-    def get_perceptrone(self) -> List[List[List[float]]]: pass
+    def get_perceptron(self) -> List[List[List[float]]]: pass

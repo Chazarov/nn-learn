@@ -16,15 +16,15 @@ from nn_logic.mathh import mv
 
 class BackPropagation(ITrainingAlgorithm):
 
-    perceptrone: List[List[List[float]]]
+    perceptron: List[List[List[float]]]
     loss: ILoss
     activation: IActivation
     learning_rate: float
 
     def __init__(self, loss: ILoss, learning_rate:float, 
-                 perceptrone: List[List[List[float]]], activation: IActivation):
+                 perceptron: List[List[List[float]]], activation: IActivation):
         self.learning_rate = learning_rate
-        self.perceptrone = perceptrone
+        self.perceptron = perceptron
         self.loss = loss
         self.activation = activation
 
@@ -73,7 +73,7 @@ class BackPropagation(ITrainingAlgorithm):
             output_local_errors.append(local_error)
 
 
-        num_layers = len(self.perceptrone)
+        num_layers = len(self.perceptron)
         local_errors: List[List[float]] = [[] for _ in range(num_layers)]
 
         local_errors[-1] += output_local_errors
@@ -91,7 +91,7 @@ class BackPropagation(ITrainingAlgorithm):
 
 
         for q in range(num_layers - 2, -1, -1): # -2 так как выходной слой не учитывается в предыдущем шагеы
-            first_step = mv.m_v_mtpc(mv.t_mtx(self.perceptrone[q+1]), local_errors[q+1]) ## first-step
+            first_step = mv.m_v_mtpc(mv.t_mtx(self.perceptron[q+1]), local_errors[q+1]) ## first-step
 
             derivatives = [self.activation.derivative(x) for x in weighted_sums_output[q]]
             q_local_errors = mv.v_v_elementwise(first_step, derivatives)
@@ -108,12 +108,12 @@ class BackPropagation(ITrainingAlgorithm):
 
 
         adjustments: List[List[List[float]]] = \
-        [[[0.0 for _ in range(len(self.perceptrone[q][i]))] for i in range(len(self.perceptrone[q]))]
+        [[[0.0 for _ in range(len(self.perceptron[q][i]))] for i in range(len(self.perceptron[q]))]
         for q in range(num_layers)]
 
         for q in range(num_layers - 1, -1, -1): # а здесь мы итерируемся по всем слоям, включая выходной 
-            for i in range(len(self.perceptrone[q])): # номер строки нейрон - получатель
-                for j in range(len(self.perceptrone[q][i])): #номер столбца нейрон - источник
+            for i in range(len(self.perceptron[q])): # номер строки нейрон - получатель
+                for j in range(len(self.perceptron[q][i])): #номер столбца нейрон - источник
                     if q == 0:
                         y_prev = inputs[j]
                     else:
@@ -124,11 +124,11 @@ class BackPropagation(ITrainingAlgorithm):
         return adjustments
         
 
-    def get_perceptrone(self): return self.perceptrone
+    def get_perceptron(self): return self.perceptron
 
-    def get_loos_function(self): return self.loss
+    def get_loss_function(self): return self.loss
 
-    def get_looses(self): pass
+    def get_losses(self): pass
         
     def get_output_loss(self): pass
 

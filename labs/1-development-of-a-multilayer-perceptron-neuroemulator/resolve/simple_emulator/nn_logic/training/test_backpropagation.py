@@ -18,7 +18,7 @@ def test_backpropagation_iteration():
     OUTPUTS = [0.337]
     EXPECTED_OUTPUTS = [1.0]
 
-    PERCEPTRONE = \
+    PERCEPTRON = \
     [
         [
             [  0.1, 0.4,],
@@ -48,7 +48,7 @@ def test_backpropagation_iteration():
 
 
 
-    backprop = BackPropagation(MSE(), LEARNING_RATE, PERCEPTRONE, Rellu())
+    backprop = BackPropagation(MSE(), LEARNING_RATE, PERCEPTRON, Rellu())
 
 
     result = backprop.training_iteration_calculate(INPUTS, OUTPUTS, EXPECTED_OUTPUTS, WEIGHTD_SUMS_OUTPUT)

@@ -13,7 +13,7 @@ def test_forward_propagation():
     """
     INPUTS = [0.5, 0.3]
 
-    PERCEPTRONE = \
+    PERCEPTRON = \
     [
         [
             [0.1, 0.4],
@@ -32,7 +32,7 @@ def test_forward_propagation():
     ]
 
 
-    outputs, weighted_sums = forward_propogation(INPUTS, PERCEPTRONE, Rellu())
+    outputs, weighted_sums = forward_propogation(INPUTS, PERCEPTRON, Rellu())
 
 
     errors: List[Any] = list()

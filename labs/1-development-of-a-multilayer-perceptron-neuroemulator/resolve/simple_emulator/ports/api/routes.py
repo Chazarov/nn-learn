@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from ports.api.handlers.perceptrone_actions import router as p_actions_router
+from ports.api.handlers.perceptron_actions import router as p_actions_router
 from ports.api.handlers.images import router as images_router
 from ports.api.handlers.csv_files import router as csv_router
 from ports.api.handlers.auth import router as auth_router

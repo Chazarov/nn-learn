@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path
 from nn_logic.activation import ActivationType, ACTIVATIONS
 from nn_logic.forwrdpropagation.forward_propagation import forward_propogation
 from nn_logic.loss import MSE
-from nn_logic.mathh.mv import apply_adjustments, init_perceptrone as build_perceptrone, normalize
+from nn_logic.mathh.mv import apply_adjustments, init_perceptron as build_perceptron, normalize
 from nn_logic.training.backpropagation import BackPropagation
 from nn_logic.visualisation.visualisation import get_visualisation, ColorTheme
 from models.csv_file import CsvFileData
@@ -32,7 +32,7 @@ def _csv_data_to_samples(data: CsvFileData) -> List[Sample]:
 
 
 @router.post("/init")
-def init_new_perceptrone(
+def init_new_perceptron(
     token: str = Depends(oauth2_scheme),
     file_id: str = Body(...),
     hidden_layers_architecture: List[int] = Body(...),
@@ -54,7 +54,7 @@ def init_new_perceptrone(
         output_layer_size: int = len(data.classes)
 
         architecture: List[int] = [input_layer_size] + hidden_layers_architecture + [output_layer_size]
-        perceptron: List[List[List[float]]] = build_perceptrone(architecture)
+        perceptron: List[List[List[float]]] = build_perceptron(architecture)
 
         raw_samples: List[Sample] = _csv_data_to_samples(data)
         _, mins, maxs = normalize(raw_samples)
@@ -94,7 +94,7 @@ def init_new_perceptrone(
 
 
 @router.post("/learn/")
-def learn_perceptrone(
+def learn_perceptron(
     token: str = Depends(oauth2_scheme),
     project_id: str = Body(...),
     activation_type: ActivationType = Body(...),
@@ -147,7 +147,7 @@ def learn_perceptrone(
 @router.post("/get_answer")
 def get_answer(
     token: str = Depends(oauth2_scheme),
-    perceptrone_id: str = Body(...),
+    perceptron_id: str = Body(...),
     input_vector: List[float] = Body(...),
     activation_type: ActivationType = Body(...),
 ) -> Dict[str, Any]:
@@ -157,7 +157,7 @@ def get_answer(
         raise HTTPException(status_code=401, detail=str(e))
 
     try:
-        p: ProjectWithData = project_service.get_project(payload.user_id, perceptrone_id)
+        p: ProjectWithData = project_service.get_project(payload.user_id, perceptron_id)
     except NotFoundException as e:
         raise HTTPException(status_code=404, detail=str(e))
     except InternalServerException:

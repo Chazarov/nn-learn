@@ -93,7 +93,7 @@ def t_mtx(matrix: List[List[float]]) -> List[List[float]]:
 
 
 
-def init_perceptrone(architecture: List[int]) -> List[List[List[float]]]:
+def init_perceptron(architecture: List[int]) -> List[List[List[float]]]:
     perceptron: List[List[List[float]]] = list()
     for i in range(len(architecture) - 1):
         n_in = architecture[i]

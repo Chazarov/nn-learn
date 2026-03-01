@@ -97,7 +97,7 @@ export async function getAnswer(
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({
-      perceptrone_id: perceptronId,
+      perceptron_id: perceptronId,
       input_vector: inputVector,
       activation_type: activationType,
     }),

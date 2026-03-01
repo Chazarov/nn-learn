@@ -244,7 +244,7 @@ Authorization: Bearer <token>
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `perceptrone_id` | string | ID проекта из `POST /actions/init` |
+| `perceptron_id` | string | ID проекта из `POST /actions/init` |
 | `input_vector` | float[] | Значения признаков, например `[5.1, 3.5, 1.4, 0.2]` |
 | `activation_type` | enum | `RELLU` или `SIGMOID` — должен совпадать с использованным при обучении |
 
