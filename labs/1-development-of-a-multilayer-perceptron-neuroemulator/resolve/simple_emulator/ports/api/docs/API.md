@@ -178,10 +178,10 @@ Authorization: Bearer <token>
 
 **Body:** `application/json`
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `file_id` | string | ID файла из `POST /csv/upload` |
-| `hidden_layers_architecture` | int[] | Размеры скрытых слоёв, например `[6]` или `[8, 4]` |
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `file_id` | string | да | — | ID файла из `POST /csv/upload` |
+| `hidden_layers_architecture` | int[] | да | — | Размеры скрытых слоёв, например `[6]` или `[8, 4]` |
 
 **Response:**
 ```json
@@ -215,17 +215,30 @@ Authorization: Bearer <token>
 
 **Body:** `application/json`
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `project_id` | string | ID проекта из `POST /actions/init` |
-| `activation_type` | enum | `RELLU` или `SIGMOID` |
-| `epochs` | int | Количество эпох обучения |
-| `learning_rate` | float | Скорость обучения |
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `project_id` | string | да | — | ID проекта из `POST /actions/init` |
+| `activation_type` | enum | да | — | `RELLU` или `SIGMOID` |
+| `softmax_use` | bool | нет | `false` | Заменить активацию последнего слоя на Softmax |
+| `loss_type` | enum | нет | `MSE` | Функция потерь: `MSE` или `CROSS_ENTROPY` |
+| `epochs` | int | да | — | Количество эпох обучения |
+| `learning_rate` | float | да | — | Скорость обучения |
 
 **Response:**
 ```json
 {
-  "project_id": "<uuid>",
+  "project": {
+    "id": "<uuid>",
+    "user_id": "<uuid>",
+    "csv_file_id": "<uuid>",
+    "created_at": 1700000000,
+    "nn_data": {
+      "input_size": 4,
+      "mins": [4.3, 2.0, 1.0, 0.1],
+      "maxs": [7.9, 4.4, 6.9, 2.5],
+      "classes": ["setosa", "versicolor", "virginica"]
+    }
+  },
   "image_id": "<uuid>"
 }
 ```
@@ -242,11 +255,12 @@ Authorization: Bearer <token>
 
 **Body:** `application/json`
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `perceptron_id` | string | ID проекта из `POST /actions/init` |
-| `input_vector` | float[] | Значения признаков, например `[5.1, 3.5, 1.4, 0.2]` |
-| `activation_type` | enum | `RELLU` или `SIGMOID` — должен совпадать с использованным при обучении |
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `perceptron_id` | string | да | — | ID проекта из `POST /actions/init` |
+| `input_vector` | float[] | да | — | Значения признаков, например `[5.1, 3.5, 1.4, 0.2]` |
+| `activation_type` | enum | да | — | `RELLU` или `SIGMOID` — должен совпадать с использованным при обучении |
+| `softmax_use` | bool | нет | `false` | Применить Softmax на выходном слое — должен совпадать с использованным при обучении |
 
 **Response:**
 ```json

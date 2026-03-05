@@ -1,22 +1,15 @@
 import traceback
-import random
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path
 
-from nn_logic.training.activation import ActivationType, ACTIVATIONS, SoftMax
-from nn_logic.forwrdpropagation.forward_propagation import forward_propagation
-from nn_logic.loss import LossType, LOSSES, ILoss
+from nn_logic.training.activation import ActivationType
+from nn_logic.loss import LossType
 from nn_logic.mathh.models import Sample
-from nn_logic.mathh.mv import apply_adjustments, init_perceptron as build_perceptron, min_max_samples_normalaize, min_max_signs_normalize
-from nn_logic.training.backpropagation import BackPropagation
-from nn_logic.visualisation.visualisation import get_visualisation, ColorTheme
-from nn_logic.mathh.mv import min_max_samples_normalaize
 from models.csv_file import CsvFileData
 from models.progect_nn import NNData, ProjectWithData
-from nn_logic.mathh.models import Perceptron
 
-from container import csv_service, auth_service, project_service
+from container import csv_service, auth_service, project_service, nn_service
 from exceptions.auth_exception import AuthException
 from exceptions.not_found import NotFoundException
 from exceptions.domain import DomainException
@@ -56,21 +49,18 @@ def init_new_perceptron(
         output_layer_size: int = len(data.classes)
 
         architecture: List[int] = [input_layer_size] + hidden_layers_architecture + [output_layer_size]
-        perceptron: List[List[List[float]]] = build_perceptron(architecture)
-
         raw_samples: List[Sample] = _csv_data_to_samples(data)
-        signs_count = len(raw_samples[0].signs)
-        classes_count = len(raw_samples[0].class_marks)
-        _, mins, maxs = min_max_samples_normalaize(raw_samples, signs_count=signs_count, classes_count=classes_count)
+
+        weights, mins, maxs = nn_service.init_perceptron(architecture, raw_samples)
 
         nn_data: NNData = NNData(
-            weights=perceptron,
+            weights=weights,
             input_size=input_layer_size,
             mins=mins,
             maxs=maxs,
             classes=data.classes,
         )
-        img = get_visualisation(perceptron, ColorTheme.DARK)
+        img = nn_service.get_visualisation(weights)
 
         project = project_service.create(payload.user_id, nn_data=nn_data, csv_file_id=file_id)
         image_id = project_service.save_image(payload.user_id, project.id, img)
@@ -86,7 +76,7 @@ def init_new_perceptron(
                                    user_id = payload.user_id, 
                                    created_at=project.created_at,
                                    csv_file_id=file_id,
-                                   nn_data=NNData(weights=perceptron, 
+                                   nn_data=NNData(weights=weights, 
                                                   input_size=nn_data.input_size,
                                                   mins=nn_data.mins,
                                                   maxs=nn_data.maxs,
@@ -122,30 +112,18 @@ def learn_perceptron(
 
     try:
         raw_samples: List[Sample] = _csv_data_to_samples(samples_data)
-        signs_count: int = len(raw_samples[0].signs)
-        classes_count: int = len(raw_samples[0].class_marks)
 
+        nn_service.train(
+            weights=p.nn_data.weights,
+            samples=raw_samples,
+            activation_type=activation_type,
+            loss_type=loss_type,
+            softmax_use=softmax_use,
+            epochs=epochs,
+            learning_rate=learning_rate,
+        )
 
-        normalized_samples: List[Sample]
-        normalized_samples, _, _ = min_max_samples_normalaize(raw_samples, signs_count=signs_count, classes_count=classes_count)
-
-        layers_count = len(p.nn_data.weights) + 1
-
-        activations = [ACTIVATIONS[activation_type]() for _ in range(layers_count - 1)]
-        loss:ILoss = LOSSES[loss_type]
-        if(softmax_use):
-            activations[-1] = ActivationType.SOFTMAX
-        perceptron = Perceptron(weights=p.nn_data.weights, activations=activations, layers_count=layers_count)
-        bp = BackPropagation(loss, learning_rate, perceptron)
-
-        for _ in range(epochs):
-            random.shuffle(normalized_samples)
-            for sample in normalized_samples:
-                outputs, weighted_sums = forward_propagation(sample.signs, perceptron)
-                adjustments = bp.training_iteration_calculate(sample.signs, outputs, sample.class_marks, weighted_sums)
-                apply_adjustments(p.nn_data.weights, adjustments)
-
-        img = get_visualisation(p.nn_data.weights, ColorTheme.DARK)
+        img = nn_service.get_visualisation(p.nn_data.weights)
         image_id = project_service.save_image(payload.user_id, p.id, img)
         project_service.update_weights(payload.user_id, p.id, p.nn_data.weights)
     except DomainException as e:
@@ -182,19 +160,18 @@ def get_answer(
         raise HTTPException(status_code=500, detail="Internal server error")
 
     try:
-        activations = [ACTIVATIONS[activation_type]()for _ in range(len(p.nn_data.weights))]
-        if(softmax_use):
-            activations[-1] = SoftMax()
-        mins = p.nn_data.mins
-        maxs = p.nn_data.maxs
         classes = p.nn_data.classes
 
-        inpupts: List[float] = min_max_signs_normalize(input_vector, maxs=maxs, mins=mins, signs_count=p.nn_data.input_size)
+        output_vector = nn_service.predict(
+            weights=p.nn_data.weights,
+            input_vector=input_vector,
+            activation_type=activation_type,
+            softmax_use=softmax_use,
+            mins=p.nn_data.mins,
+            maxs=p.nn_data.maxs,
+            input_size=p.nn_data.input_size,
+        )
 
-        perceptron: Perceptron = Perceptron(weights=p.nn_data.weights, activations=activations, layers_count=len(p.nn_data.weights))
-        output_vector, _ = forward_propagation(inpupts, perceptron)
-
-        
         predicted: str = classes[output_vector.index(max(output_vector))]
         confidences: Dict[str, float] = {
             classes[i]: round(output_vector[i], 4) for i in range(len(classes))
