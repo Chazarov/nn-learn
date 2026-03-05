@@ -4,11 +4,11 @@ from typing import Any, Dict, List
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path
 
-from nn_logic.training.activation import ActivationType, ACTIVATIONS
-from nn_logic.forwrdpropagation.forward_propagation import forward_propogation
-from nn_logic.loss import MSE
+from nn_logic.training.activation import ActivationType, ACTIVATIONS, SoftMax
+from nn_logic.forwrdpropagation.forward_propagation import forward_propagation
+from nn_logic.loss import LossType, LOSSES, ILoss
 from nn_logic.mathh.models import Sample
-from nn_logic.mathh.mv import apply_adjustments, init_perceptron as build_perceptron, min_max_samples_normalaize
+from nn_logic.mathh.mv import apply_adjustments, init_perceptron as build_perceptron, min_max_samples_normalaize, min_max_signs_normalize
 from nn_logic.training.backpropagation import BackPropagation
 from nn_logic.visualisation.visualisation import get_visualisation, ColorTheme
 from nn_logic.mathh.mv import min_max_samples_normalaize
@@ -102,6 +102,8 @@ def learn_perceptron(
     token: str = Depends(oauth2_scheme),
     project_id: str = Body(...),
     activation_type: ActivationType = Body(...),
+    softmax_use: bool = Body(default=False),
+    loss_type: LossType = Body(default=LossType.MSE),
     epochs: int = Body(...),
     learning_rate: float = Body(...),
 ) -> Dict[str, Any]:
@@ -129,15 +131,17 @@ def learn_perceptron(
 
         layers_count = len(p.nn_data.weights) + 1
 
-        activation = ACTIVATIONS[activation_type]()
         activations = [ACTIVATIONS[activation_type]() for _ in range(layers_count - 1)]
+        loss:ILoss = LOSSES[loss_type]
+        if(softmax_use):
+            activations[-1] = ActivationType.SOFTMAX
         perceptron = Perceptron(weights=p.nn_data.weights, activations=activations, layers_count=layers_count)
-        bp = BackPropagation(MSE(), learning_rate, perceptron)
+        bp = BackPropagation(loss, learning_rate, perceptron)
 
         for _ in range(epochs):
             random.shuffle(normalized_samples)
             for sample in normalized_samples:
-                outputs, weighted_sums = forward_propogation(sample.signs, p.nn_data.weights, activation)
+                outputs, weighted_sums = forward_propagation(sample.signs, perceptron)
                 adjustments = bp.training_iteration_calculate(sample.signs, outputs, sample.class_marks, weighted_sums)
                 apply_adjustments(p.nn_data.weights, adjustments)
 
@@ -163,6 +167,7 @@ def get_answer(
     perceptron_id: str = Body(...),
     input_vector: List[float] = Body(...),
     activation_type: ActivationType = Body(...),
+    softmax_use: bool = Body(default=False),
 ) -> Dict[str, Any]:
     try:
         payload = auth_service.token_validate(token)
@@ -177,17 +182,19 @@ def get_answer(
         raise HTTPException(status_code=500, detail="Internal server error")
 
     try:
-        activation = ACTIVATIONS[activation_type]()
+        activations = [ACTIVATIONS[activation_type]()for _ in range(len(p.nn_data.weights))]
+        if(softmax_use):
+            activations[-1] = SoftMax()
         mins = p.nn_data.mins
         maxs = p.nn_data.maxs
         classes = p.nn_data.classes
 
-        inpupts: List[float] = [
-            (input_vector[i] - mins[i]) / (maxs[i] - mins[i])
-            for i in range(len(input_vector))
-        ]
-        output_vector, _ = forward_propogation(inpupts, p.nn_data.weights, activation)
+        inpupts: List[float] = min_max_signs_normalize(input_vector, maxs=maxs, mins=mins, signs_count=p.nn_data.input_size)
 
+        perceptron: Perceptron = Perceptron(weights=p.nn_data.weights, activations=activations, layers_count=len(p.nn_data.weights))
+        output_vector, _ = forward_propagation(inpupts, perceptron)
+
+        
         predicted: str = classes[output_vector.index(max(output_vector))]
         confidences: Dict[str, float] = {
             classes[i]: round(output_vector[i], 4) for i in range(len(classes))

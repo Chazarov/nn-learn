@@ -1,13 +1,14 @@
 from typing import List, Tuple
 
 from log import logger
-from nn_logic.training.activation import IActivation
+from nn_logic.training.activation import ActivationType, SoftMax
+from nn_logic.mathh.models import Perceptron
 
 
-def forward_propogation(
+
+def forward_propagation(
     inputs: List[float],
-    perceptron: List[List[List[float]]],
-    activation: IActivation,
+    perceptron: Perceptron,
 ) -> Tuple[List[float], List[List[float]]]:
     """
     Прямое распространение сигнала через многослойный перцептрон.
@@ -16,7 +17,6 @@ def forward_propogation(
         inputs: входные значения (x)
         perceptron: весовые матрицы слоёв.
             perceptron[q][j][k] — вес от k-го нейрона слоя (q-1) к j-му нейрону слоя q.
-        activation: функция активации
 
     Returns:
         (outputs, weighted_sums_output)
@@ -24,11 +24,12 @@ def forward_propogation(
         weighted_sums_output — взвешенные суммы каждого слоя до активации,
             weighted_sums_output[q][j] = s_j^q
     """
-    if not perceptron:
-        raise RuntimeError("perceptron is empty")
-    if len(inputs) != len(perceptron[0][0]):
+    
+    p = perceptron
+    
+    if len(inputs) != len(p.weights[0][0]):
         e_str = (
-            f"incorrect size of inputs: expected {len(perceptron[0][0])}, got {len(inputs)}"
+            f"incorrect size of inputs: expected {len(p.weights[0][0])}, got {len(inputs)}"
         )
         logger.error(e_str)
         raise RuntimeError(e_str)
@@ -36,16 +37,26 @@ def forward_propogation(
     current_activations: List[float] = inputs
     weighted_sums_output: List[List[float]] = []
 
-    for q in range(len(perceptron)):
+
+
+    for q in range(p.layers_count - 1):
         layer_sums: List[float] = []
         layer_activations: List[float] = []
 
-        for j in range(len(perceptron[q])):
+
+        for j in range(len(p.weights[q])):
             s_j = 0.0
-            for k in range(len(perceptron[q][j])):
-                s_j += perceptron[q][j][k] * current_activations[k]
+            for k in range(len(p.weights[q][j])):
+                s_j += p.weights[q][j][k] * current_activations[k]
             layer_sums.append(s_j)
-            layer_activations.append(activation.perform(s_j))
+
+            if p.activations[q].get_type() != ActivationType.SOFTMAX:
+                layer_activations.append(p.activations[q].perform(s_j))
+
+        if p.activations[q].get_type() == ActivationType.SOFTMAX:
+            softmax_act: SoftMax = p.activations[q]  # type: ignore[assignment]
+            softmax_act.set_layer_outputs(layer_sums)
+            layer_activations = [p.activations[q].perform(s) for s in layer_sums]
 
         weighted_sums_output.append(layer_sums)
         current_activations = layer_activations

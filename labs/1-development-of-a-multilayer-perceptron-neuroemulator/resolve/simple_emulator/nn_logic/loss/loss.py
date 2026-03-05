@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List
+from typing import Any, Dict, List
 
 from exceptions import ArgumentException
 from log import logger
@@ -65,3 +65,10 @@ class CrossEntropy(ILoss):
     
     def get_type(self) -> LossType:
         return LossType.CROSS_ENTROPY
+    
+
+
+LOSSES:Dict[str, Any] = {
+    LossType.MSE: MSE,
+    LossType.CROSS_ENTROPY: CrossEntropy
+}

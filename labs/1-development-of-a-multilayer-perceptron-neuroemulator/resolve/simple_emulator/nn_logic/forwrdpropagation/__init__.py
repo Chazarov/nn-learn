@@ -1,1 +1,1 @@
-from nn_logic.forwrdpropagation.forward_propagation import forward_propogation #type: ignore 
+from nn_logic.forwrdpropagation.forward_propagation import forward_propagation #type: ignore 
