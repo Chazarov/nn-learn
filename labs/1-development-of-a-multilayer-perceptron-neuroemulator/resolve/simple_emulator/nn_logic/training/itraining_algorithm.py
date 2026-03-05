@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from nn_logic.loss import ILoss
+from nn_logic.mathh.models import Perceptron
 
 
 class ITrainingAlgorithm(ABC):
@@ -21,4 +22,4 @@ class ITrainingAlgorithm(ABC):
     def get_loss_function(self) -> ILoss: pass 
 
     @abstractmethod
-    def get_perceptron(self) -> List[List[List[float]]]: pass
+    def get_perceptron(self) -> Perceptron: pass

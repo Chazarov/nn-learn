@@ -1,17 +1,20 @@
 import traceback
 import random
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path
 
-from nn_logic.activation import ActivationType, ACTIVATIONS
+from nn_logic.training.activation import ActivationType, ACTIVATIONS
 from nn_logic.forwrdpropagation.forward_propagation import forward_propogation
 from nn_logic.loss import MSE
-from nn_logic.mathh.mv import apply_adjustments, init_perceptron as build_perceptron, normalize
+from nn_logic.mathh.models import Sample
+from nn_logic.mathh.mv import apply_adjustments, init_perceptron as build_perceptron, min_max_samples_normalaize
 from nn_logic.training.backpropagation import BackPropagation
 from nn_logic.visualisation.visualisation import get_visualisation, ColorTheme
+from nn_logic.mathh.mv import min_max_samples_normalaize
 from models.csv_file import CsvFileData
 from models.progect_nn import NNData, ProjectWithData
+from nn_logic.mathh.models import Perceptron
 
 from container import csv_service, auth_service, project_service
 from exceptions.auth_exception import AuthException
@@ -24,11 +27,10 @@ from ports.api.handlers.tools import oauth2_scheme
 
 router = APIRouter()
 
-Sample = Tuple[List[float], List[float]]
 
 
 def _csv_data_to_samples(data: CsvFileData) -> List[Sample]:
-    return [(row.signs_vector, row.class_mark) for row in data.rows]
+    return [Sample(signs=row.signs_vector, class_marks=row.class_mark) for row in data.rows]
 
 
 @router.post("/init")
@@ -57,7 +59,9 @@ def init_new_perceptron(
         perceptron: List[List[List[float]]] = build_perceptron(architecture)
 
         raw_samples: List[Sample] = _csv_data_to_samples(data)
-        _, mins, maxs = normalize(raw_samples)
+        signs_count = len(raw_samples[0].signs)
+        classes_count = len(raw_samples[0].class_marks)
+        _, mins, maxs = min_max_samples_normalaize(raw_samples, signs_count=signs_count, classes_count=classes_count)
 
         nn_data: NNData = NNData(
             weights=perceptron,
@@ -116,16 +120,25 @@ def learn_perceptron(
 
     try:
         raw_samples: List[Sample] = _csv_data_to_samples(samples_data)
-        normalized_samples, _, _ = normalize(raw_samples)
+        signs_count: int = len(raw_samples[0].signs)
+        classes_count: int = len(raw_samples[0].class_marks)
+
+
+        normalized_samples: List[Sample]
+        normalized_samples, _, _ = min_max_samples_normalaize(raw_samples, signs_count=signs_count, classes_count=classes_count)
+
+        layers_count = len(p.nn_data.weights) + 1
 
         activation = ACTIVATIONS[activation_type]()
-        bp = BackPropagation(MSE(), learning_rate, p.nn_data.weights, activation)
+        activations = [ACTIVATIONS[activation_type]() for _ in range(layers_count - 1)]
+        perceptron = Perceptron(weights=p.nn_data.weights, activations=activations, layers_count=layers_count)
+        bp = BackPropagation(MSE(), learning_rate, perceptron)
 
         for _ in range(epochs):
             random.shuffle(normalized_samples)
-            for x, y in normalized_samples:
-                outputs, weighted_sums = forward_propogation(x, p.nn_data.weights, activation)
-                adjustments = bp.training_iteration_calculate(x, outputs, y, weighted_sums)
+            for sample in normalized_samples:
+                outputs, weighted_sums = forward_propogation(sample.signs, p.nn_data.weights, activation)
+                adjustments = bp.training_iteration_calculate(sample.signs, outputs, sample.class_marks, weighted_sums)
                 apply_adjustments(p.nn_data.weights, adjustments)
 
         img = get_visualisation(p.nn_data.weights, ColorTheme.DARK)
@@ -169,11 +182,11 @@ def get_answer(
         maxs = p.nn_data.maxs
         classes = p.nn_data.classes
 
-        xn: List[float] = [
+        inpupts: List[float] = [
             (input_vector[i] - mins[i]) / (maxs[i] - mins[i])
             for i in range(len(input_vector))
         ]
-        output_vector, _ = forward_propogation(xn, p.nn_data.weights, activation)
+        output_vector, _ = forward_propogation(inpupts, p.nn_data.weights, activation)
 
         predicted: str = classes[output_vector.index(max(output_vector))]
         confidences: Dict[str, float] = {

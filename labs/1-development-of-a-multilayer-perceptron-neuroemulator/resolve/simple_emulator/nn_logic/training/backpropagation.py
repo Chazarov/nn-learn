@@ -3,9 +3,11 @@ from typing import List
 
 
 from nn_logic.training.itraining_algorithm import ITrainingAlgorithm
-from nn_logic.loss import ILoss
-from nn_logic.activation import IActivation
+from nn_logic.loss import ILoss, LossType
+# from nn_logic.training.activation import IActivation
 from nn_logic.mathh import mv
+from nn_logic.mathh.models import Perceptron
+from nn_logic.training.activation import ActivationType
 
 
 # from config import config
@@ -16,17 +18,15 @@ from nn_logic.mathh import mv
 
 class BackPropagation(ITrainingAlgorithm):
 
-    perceptron: List[List[List[float]]]
+    p: Perceptron
     loss: ILoss
-    activation: IActivation
     learning_rate: float
 
     def __init__(self, loss: ILoss, learning_rate:float, 
-                 perceptron: List[List[List[float]]], activation: IActivation):
+                 perceptron: Perceptron):
         self.learning_rate = learning_rate
-        self.perceptron = perceptron
+        self.p = perceptron
         self.loss = loss
-        self.activation = activation
 
     def training_iteration_calculate(self, inputs: List[float], outputs: List[float], expected: List[float],
                           weighted_sums_output: List[List[float]]):
@@ -58,23 +58,44 @@ class BackPropagation(ITrainingAlgorithm):
         
         
         output_local_errors: List[float] = []
-        
-        for j in range(len(outputs)):
-            
-            y_j = outputs[j]
-            
-            d_j = expected[j]
-            
-            s_j = weighted_sums_output[-1][j]
-            
-            
-            derivative = self.activation.derivative(s_j)
-            local_error = (y_j - d_j) * derivative
-            output_local_errors.append(local_error)
-
-
-        num_layers = len(self.perceptron)
+        num_layers = len(self.p.weights)
         local_errors: List[List[float]] = [[] for _ in range(num_layers)]
+
+
+        # Если используется soft-max + cross-entropy то используется упрощенная формула без производных
+        if(self.p.activations[-1].get_type() == ActivationType.SOFTMAX 
+           and self.loss.get_type() == LossType.CROSS_ENTROPY):
+            for j in range(len(outputs)):
+                y_j = outputs[j]
+                d_j = expected[j]
+                s_j = weighted_sums_output[-1][j]
+
+                local_error = (y_j - d_j)
+                output_local_errors.append(local_error)
+
+        # Редко используемая комбинация
+        elif(self.p.activations[-1].get_type() == ActivationType.SOFTMAX 
+           and self.loss.get_type() == LossType.MSE):
+            for j in range(len(outputs)):
+                y_j = outputs[j]
+                d_j = expected[j]
+                s_j = weighted_sums_output[-1][j]
+
+                local_error = y_j*(y_j - d_j)
+                output_local_errors.append(local_error)
+
+        else:
+        
+            for j in range(len(outputs)):
+                y_j = outputs[j]
+                d_j = expected[j]
+                s_j = weighted_sums_output[-1][j]
+                
+                
+                derivative = self.p.activations[-1].derivative(s_j)
+                local_error = (y_j - d_j) * derivative
+                output_local_errors.append(local_error)
+
 
         local_errors[-1] += output_local_errors
 
@@ -91,9 +112,9 @@ class BackPropagation(ITrainingAlgorithm):
 
 
         for q in range(num_layers - 2, -1, -1): # -2 так как выходной слой не учитывается в предыдущем шагеы
-            first_step = mv.m_v_mtpc(mv.t_mtx(self.perceptron[q+1]), local_errors[q+1]) ## first-step
+            first_step = mv.m_v_mtpc(mv.t_mtx(self.p.weights[q+1]), local_errors[q+1]) ## first-step
 
-            derivatives = [self.activation.derivative(x) for x in weighted_sums_output[q]]
+            derivatives = [self.p.activations[q].derivative(x) for x in weighted_sums_output[q]]
             q_local_errors = mv.v_v_elementwise(first_step, derivatives)
 
             local_errors[q] += q_local_errors
@@ -108,23 +129,23 @@ class BackPropagation(ITrainingAlgorithm):
 
 
         adjustments: List[List[List[float]]] = \
-        [[[0.0 for _ in range(len(self.perceptron[q][i]))] for i in range(len(self.perceptron[q]))]
+        [[[0.0 for _ in range(len(self.p.weights[q][i]))] for i in range(len(self.p.weights[q]))]
         for q in range(num_layers)]
 
         for q in range(num_layers - 1, -1, -1): # а здесь мы итерируемся по всем слоям, включая выходной 
-            for i in range(len(self.perceptron[q])): # номер строки нейрон - получатель
-                for j in range(len(self.perceptron[q][i])): #номер столбца нейрон - источник
+            for i in range(len(self.p.weights[q])): # номер строки нейрон - получатель
+                for j in range(len(self.p.weights[q][i])): #номер столбца нейрон - источник
                     if q == 0:
                         y_prev = inputs[j]
                     else:
-                        y_prev = self.activation.perform(weighted_sums_output[q-1][j])
+                        y_prev = self.p.activations[q].perform(weighted_sums_output[q-1][j])
                     adjust = (-self.learning_rate) * local_errors[q][i] * y_prev
                     adjustments[q][i][j] = adjust
 
         return adjustments
         
 
-    def get_perceptron(self): return self.perceptron
+    def get_perceptron(self): return self.p
 
     def get_loss_function(self): return self.loss
 

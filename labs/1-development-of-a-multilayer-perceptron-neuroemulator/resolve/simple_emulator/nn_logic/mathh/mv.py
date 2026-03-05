@@ -2,6 +2,7 @@ from typing import List, Tuple
 from random import uniform
 
 
+from nn_logic.mathh.models import Sample
 from exceptions.argument_exception import ArgumentException
 from log import logger
 
@@ -107,18 +108,56 @@ def get_random_matrix(n_out: int, n_in: int) -> List[List[float]]:
     return [[uniform(-1, 1) for _ in range(n_in)] for _ in range(n_out)]
 
 
-Sample = Tuple[List[float], List[float]]
-# Where is x - vector of signs, y - class mark
 
-def normalize(data: List[Sample]) -> Tuple[List[Sample], List[float], List[float]]:
-    n: int = len(data[0][0])
-    mins: List[float] = [min(r[0][i] for r in data) for i in range(n)]
-    maxs: List[float] = [max(r[0][i] for r in data) for i in range(n)]
-    normed: List[Sample] = [
-        ([(x[i] - mins[i]) / (maxs[i] - mins[i]) for i in range(n)], y)
-        for x, y in data
-    ]
 
+def min_max_function(x:float, xmin:float, xmax:float) -> float:
+        return (x - xmin)/(xmax - xmin)
+
+def min_max_signs_normalize(signs:List[float], maxs:List[float], mins:List[float], signs_count:int):
+    normed_signs:List[float] = list()
+
+
+    if len(maxs) != signs_count:
+        logger.error(" The size of the maxs array is not equal to the value of the signs_count parameter")
+        raise ArgumentException()
+    if len(mins) != signs_count:
+        logger.error(" The size of the mins array is not equal to the value of the signs_count parameter ")
+        raise ArgumentException()
+    if len(signs) != signs_count:
+        logger.error(" The size of the signs array is not equal to the value of the signs_count parameter")
+        raise ArgumentException()
+    
+
+    for j in range(signs_count):
+        xnormed = min_max_function(signs[j], mins[j], maxs[j])
+        normed_signs.append(xnormed)
+    return normed_signs
+
+def min_max_samples_normalaize(data: List[Sample], signs_count:int, classes_count:int) -> Tuple[List[Sample], List[float], List[float]]:
+    
+  
+    maxs: List[float] = [-999999 for _ in range(signs_count)]
+    mins: List[float] = [999999 for _ in range(signs_count)]
+
+    for i in range(len(data)):
+        if len(data[i].signs) != signs_count:
+            logger.error(" The number of signs in the example does not math the number passed" \
+            "in the signs_count variable ")
+            raise ArgumentException()
+        if len(data[i].class_marks) != classes_count:
+            logger.error(" The number of classes in the example does not math the number passed" \
+            "in the classes_count variable ")
+            raise ArgumentException()
+        for j in range(signs_count):
+            maxs[j] = max(maxs[j], data[i].signs[j])
+            mins[j] = min(mins[j], data[i].signs[j])
+
+
+
+    normed:List[Sample] = list()
+    for i in range(len(data)):
+        normed_signs:List[float] = min_max_signs_normalize(signs=data[i].signs, maxs=maxs, mins=mins, signs_count=signs_count)
+        normed.append(Sample(signs = normed_signs, class_marks=data[i].class_marks))
     # normalized data in 0 - 1 range. 
     # mins - minimal values for signs.
     # If  there were 7 signs, then the lengths of the mins and maxs arrays will be 7.

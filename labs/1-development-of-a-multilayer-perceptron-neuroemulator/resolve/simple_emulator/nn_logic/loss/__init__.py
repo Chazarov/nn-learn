@@ -1,1 +1,1 @@
-from nn_logic.loss.loss import ILoss , MSE # type: ignore[unused-variable]
+from nn_logic.loss.loss import ILoss , MSE, LossType # type: ignore[unused-variable]

@@ -3,7 +3,7 @@ import * as api from "../api";
 
 const HELP_URL = "https://github.com/Chazarov/nn-learn/tree/master/labs/1-development-of-a-multilayer-perceptron-neuroemulator/resolve";
 const MAX_LAYERS = 10;
-const MAX_NEURONS = 20;
+const MAX_NEURONS = 30;
 
 export default function MainPage({ token, onLogout }) {
   const [projects, setProjects] = useState([]);
