@@ -1,3 +1,4 @@
+import copy
 import random
 from typing import List, Tuple
 
@@ -68,6 +69,9 @@ class NNService:
         )
         bp = BackPropagation(loss, learning_rate, perceptron)
 
+        best_loss = float("inf")
+        best_weights: List[List[List[float]]] = copy.deepcopy(perceptron.weights)
+
         for _ in range(epochs):
             random.shuffle(normalized_samples)
             for sample in normalized_samples:
@@ -76,6 +80,22 @@ class NNService:
                     sample.signs, outputs, sample.class_marks, weighted_sums,
                 )
                 perceptron.weights = apply_adjustments(weights, adjustments)
+
+            epoch_loss = sum(
+                loss.perform(s.class_marks, forward_propagation(s.signs, perceptron)[0])
+                for s in normalized_samples
+            ) / len(normalized_samples)
+
+            if epoch_loss < best_loss:
+                best_loss = epoch_loss
+                best_weights = copy.deepcopy(perceptron.weights)
+
+        for q in range(len(weights)):
+            for i in range(len(weights[q])):
+                for j in range(len(weights[q][i])):
+                    weights[q][i][j] = best_weights[q][i][j]
+
+        return best_weights
 
     def predict(
         self,

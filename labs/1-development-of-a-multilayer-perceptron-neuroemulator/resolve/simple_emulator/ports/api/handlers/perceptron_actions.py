@@ -113,7 +113,7 @@ def learn_perceptron(
     try:
         raw_samples: List[Sample] = _csv_data_to_samples(samples_data)
 
-        nn_service.train(
+        p.nn_data.weights = nn_service.train(
             weights=p.nn_data.weights,
             samples=raw_samples,
             activation_type=activation_type,

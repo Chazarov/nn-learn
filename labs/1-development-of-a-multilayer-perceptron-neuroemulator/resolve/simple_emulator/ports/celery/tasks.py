@@ -31,7 +31,7 @@ def train_perceptron_task(
     act = ActivationType(activation_type)
     lt = LossType(loss_type)
 
-    nn_service.train(
+    p.nn_data.weights = nn_service.train(
         weights=p.nn_data.weights,
         samples=raw_samples,
         activation_type=act,
