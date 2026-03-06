@@ -40,8 +40,11 @@ class CsvService:
 
         return file
 
-    def init_sample(self, user_id: str):
-        sample_name = "sample_Iris.csv"
+    def init_samples(self, user_id: str):
+        self.init_sample("sample_Iris.csv", user_id)
+        self.init_sample("sample_colors.csv", user_id)
+
+    def init_sample(self, sample_name, user_id):
         sample_path = os.path.join(config.CSV_DIRECTORY, sample_name)
         with open(sample_path, "rb") as f:
             content = f.read()

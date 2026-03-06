@@ -3,7 +3,7 @@ from typing import Any, List
 from nn_logic.training.backpropagation import BackPropagation
 from nn_logic.mathh.models import Perceptron
 from nn_logic.loss import MSE
-from nn_logic.training.activation import Rellu
+from nn_logic.training.activation.activation import Rellu
 
 from nn_logic.mathh.mv import (
     apply_adjustments

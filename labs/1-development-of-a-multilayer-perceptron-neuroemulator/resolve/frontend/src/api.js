@@ -67,24 +67,21 @@ export async function initPerceptron(token, fileId, hiddenLayersArchitecture) {
   return handleResponse(res);
 }
 
-export async function learnPerceptron(
-  token,
-  projectId,
-  activationType,
-  epochs,
-  learningRate,
-) {
-  const res = await fetch(`${BASE}/actions/learn/`, {
-    method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({
-      project_id: projectId,
-      activation_type: activationType,
-      epochs,
-      learning_rate: learningRate,
-    }),
+export function learnPerceptronWS(token, params, onMessage) {
+  return new Promise((resolve, reject) => {
+    const proto = location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(
+      `${proto}//${location.host}/api/ws/learn?token=${token}`,
+    );
+    ws.onopen = () => ws.send(JSON.stringify(params));
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      onMessage(msg);
+      if (msg.type === "training_completed") resolve(msg);
+      if (msg.type === "error") reject(new Error(msg.detail));
+    };
+    ws.onerror = () => reject(new Error("WebSocket connection failed"));
   });
-  return handleResponse(res);
 }
 
 export async function getAnswer(

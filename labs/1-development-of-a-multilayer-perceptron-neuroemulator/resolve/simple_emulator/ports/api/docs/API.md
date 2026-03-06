@@ -27,6 +27,7 @@ Authorization: Bearer <token>
 | `GET` | `/actions/project/{project_id}` | Bearer | Получить все данные проекта (кроме весов) |
 | `DELETE` | `/actions/projects/{project_id}` | Bearer | Удалить проект по id |
 | `GET` | `/images/{image_id}` | Bearer | Получить изображение визуализации весов |
+| `WS` | `/ws/learn` | query `token` | Запустить обучение через Celery и получать прогресс в реальном времени |
 
 ---
 
@@ -349,6 +350,92 @@ Authorization: Bearer <token>
 **Errors:**
 - `401` — невалидный или просроченный токен
 - `404` — проект не найден
+
+---
+
+## WebSocket
+
+### WS `/ws/learn`
+
+Запустить обучение перцептрона асинхронно через Celery и получать прогресс в реальном времени.
+
+**Подключение:**
+
+```
+ws://localhost:8000/api/ws/learn?token=<jwt>
+```
+
+Токен передаётся как query-параметр `token` (не в заголовке).
+
+**Запрос клиента (JSON) после установки соединения:**
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `project_id` | string | да | — | ID проекта из `POST /actions/init` |
+| `activation_type` | enum | да | — | `RELLU` или `SIGMOID` |
+| `epochs` | int | да | — | Количество эпох обучения |
+| `learning_rate` | float | да | — | Скорость обучения |
+| `softmax_use` | bool | нет | `false` | Применить Softmax на выходном слое |
+| `loss_type` | enum | нет | `MSE` | Функция потерь: `MSE` или `CROSS_ENTROPY` |
+
+**Сообщения от сервера:**
+
+Сервер периодически отправляет JSON-сообщения с полем `type`.
+
+#### Пока задача в очереди (`type: "queue_update"`)
+
+```json
+{
+  "type": "queue_update",
+  "position": 3
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `position` | int | Количество задач, стоящих перед текущей в очереди |
+
+#### Обучение завершено (`type: "training_completed"`)
+
+```json
+{
+  "type": "training_completed",
+  "epochs": 100,
+  "loss": 0.0312,
+  "project": {
+    "id": "<uuid>",
+    "user_id": "<uuid>",
+    "csv_file_id": "<uuid>",
+    "created_at": 1700000000,
+    "nn_data": {
+      "input_size": 4,
+      "mins": [4.3, 2.0, 1.0, 0.1],
+      "maxs": [7.9, 4.4, 6.9, 2.5],
+      "classes": ["setosa", "versicolor", "virginica"]
+    }
+  },
+  "image_id": "<uuid>"
+}
+```
+
+После этого сообщения соединение закрывается сервером.
+
+#### Ошибка (`type: "error"`)
+
+```json
+{
+  "type": "error",
+  "detail": "<описание ошибки>"
+}
+```
+
+Возможные причины:
+- невалидный / просроченный токен (`"Unauthorized"`)
+- не переданы обязательные поля запроса
+- проект не найден (`"Project not found"`)
+- сбой задачи в воркере (`"Training failed"`)
+
+После сообщения об ошибке соединение закрывается сервером.
 
 ---
 

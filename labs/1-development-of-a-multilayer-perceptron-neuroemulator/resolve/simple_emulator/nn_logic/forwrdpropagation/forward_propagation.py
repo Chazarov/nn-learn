@@ -1,7 +1,8 @@
 from typing import List, Tuple
 
 from log import logger
-from nn_logic.training.activation import ActivationType, SoftMax
+from nn_logic.models.activation import ActivationType
+from nn_logic.training.activation.activation import SoftMax
 from nn_logic.mathh.models import Perceptron
 
 

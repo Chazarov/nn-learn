@@ -15,6 +15,16 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   mlp:
     build: ./simple_emulator
     ports:
@@ -23,10 +33,29 @@ services:
       - ./simple_emulator/.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/perceptron_db
+      REDIS_URL: redis://redis:6379/0
     volumes:
       - mlp_data:/app/data
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: ./simple_emulator
+    command: celery -A celery_app worker --loglevel=info
+    env_file:
+      - ./simple_emulator/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/perceptron_db
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - mlp_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 

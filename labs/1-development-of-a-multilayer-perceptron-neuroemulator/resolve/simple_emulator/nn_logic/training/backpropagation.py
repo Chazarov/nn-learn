@@ -4,10 +4,10 @@ from typing import List
 
 from nn_logic.training.itraining_algorithm import ITrainingAlgorithm
 from nn_logic.loss import ILoss, LossType
-# from nn_logic.training.activation import IActivation
+# from nn_logic.models.activation import IActivation
 from nn_logic.mathh import mv
 from nn_logic.mathh.models import Perceptron
-from nn_logic.training.activation import ActivationType
+from nn_logic.models.activation import ActivationType
 
 
 # from config import config

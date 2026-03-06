@@ -44,6 +44,7 @@ Thumbs.db
 # Data directories — ignore all except samples
 labs/**/data/learn/*
 !labs/**/data/learn/sample_Iris.csv
+!labs/**/data/learn/sample_colors.csv
 labs/**/data/weights/*
 !labs/**/data/weights/sample_Iris.json
 labs/**/data/visualisation/*

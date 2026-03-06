@@ -25,7 +25,7 @@ def sign_up(body: SignUpRequest) -> Dict[str, Any]:
             password=body.password, email=body.email, name=body.name
         )
         pl = auth_service.token_validate(token)
-        csv_service.init_sample(pl.user_id)
+        csv_service.init_samples(pl.user_id)
         return {"token": token}
     except AuthException as e:
         raise HTTPException(status_code=401, detail=str(e))

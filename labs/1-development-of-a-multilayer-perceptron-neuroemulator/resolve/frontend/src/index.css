@@ -543,8 +543,24 @@ a:hover {
 }
 
 .config-field select,
-.config-field input {
+.config-field input[type="number"],
+.config-field input[type="text"] {
   min-width: 140px;
+}
+
+.config-field-checkbox {
+  justify-content: flex-end;
+}
+
+.config-field-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  min-width: unset;
+  accent-color: var(--neon);
+  cursor: pointer;
+  border: 2px solid var(--border);
+  background: var(--bg-input);
+  padding: 0;
 }
 
 .big-btn {
@@ -573,12 +589,33 @@ a:hover {
   margin: 20px 0;
   padding: 16px;
   background: var(--bg);
+  position: relative;
 }
 
 .nn-image-wrapper img {
   max-width: 100%;
   height: auto;
   image-rendering: auto;
+}
+
+.training-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 10;
+}
+
+.training-overlay-status {
+  font-size: 10px;
+  color: var(--neon);
+  text-align: center;
+  animation: blink 1s infinite;
+  text-shadow: 0 0 10px var(--neon-glow);
 }
 
 /* ========== ANSWER SECTION ========== */

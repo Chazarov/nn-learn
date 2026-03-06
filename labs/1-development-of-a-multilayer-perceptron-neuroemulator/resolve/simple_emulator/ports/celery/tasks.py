@@ -1,9 +1,9 @@
 from typing import Any, Dict, List
 
-from celery_app import celery_app
+from celery import shared_task
 
 from nn_logic.mathh.models import Sample
-from nn_logic.training.activation import ActivationType
+from nn_logic.models.activation import ActivationType
 from nn_logic.loss import LossType
 
 from container import project_service, csv_service, nn_service
@@ -14,7 +14,7 @@ def _csv_data_to_samples(data) -> List[Sample]:
     return [Sample(signs=row.signs_vector, class_marks=row.class_mark) for row in data.rows]
 
 
-@celery_app.task
+@shared_task
 def train_perceptron_task(
     user_id: str,
     project_id: str,

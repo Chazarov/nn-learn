@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path
 
-from nn_logic.training.activation import ActivationType
+from nn_logic.models.activation import ActivationType
 from nn_logic.loss import LossType
 from nn_logic.mathh.models import Sample
 from models.csv_file import CsvFileData

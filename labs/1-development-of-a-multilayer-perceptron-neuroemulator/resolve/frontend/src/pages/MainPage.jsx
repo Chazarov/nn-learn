@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import * as api from "../api";
+import { learnPerceptronWS } from "../api";
 
 const HELP_URL = "https://github.com/Chazarov/nn-learn/tree/master/labs/1-development-of-a-multilayer-perceptron-neuroemulator/resolve";
 const MAX_LAYERS = 10;
@@ -15,9 +16,13 @@ export default function MainPage({ token, onLogout }) {
   const [hiddenLayers, setHiddenLayers] = useState([4]);
   const [selectedCsvId, setSelectedCsvId] = useState("");
   const [activationType, setActivationType] = useState("RELLU");
+  const [softmaxUse, setSoftmaxUse] = useState(false);
+  const [lossType, setLossType] = useState("MSE");
 
   const [epochs, setEpochs] = useState(100);
   const [learningRate, setLearningRate] = useState(0.1);
+
+  const [trainingProgress, setTrainingProgress] = useState(null);
 
   const [imageUrl, setImageUrl] = useState(null);
   const [inputSize, setInputSize] = useState(0);
@@ -192,16 +197,25 @@ export default function MainPage({ token, onLogout }) {
     if (!selectedProjectId) return;
     setLoading(true);
     setStatusMsg(null);
+    setTrainingProgress({ type: "queue_update", position: "..." });
     try {
-      const data = await api.learnPerceptron(
+      const result = await learnPerceptronWS(
         token,
-        selectedProjectId,
-        activationType,
-        epochs,
-        learningRate,
+        {
+          project_id: selectedProjectId,
+          activation_type: activationType,
+          softmax_use: softmaxUse,
+          loss_type: lossType,
+          epochs,
+          learning_rate: learningRate,
+        },
+        (msg) => {
+          if (msg.type === "queue_update") setTrainingProgress(msg);
+        },
       );
-      const proj = data.project;
-      const imgId = data.image_id;
+
+      const proj = result.project;
+      const imgId = result.image_id;
 
       setProjectData(proj);
       setInputSize(proj.nn_data?.input_size || 0);
@@ -210,11 +224,15 @@ export default function MainPage({ token, onLogout }) {
       const imgUrl = await api.fetchImageBlob(token, imgId);
       setImageUrl(imgUrl);
 
-      setStatusMsg({ type: "success", text: "Training complete!" });
+      setStatusMsg({
+        type: "success",
+        text: `Training complete! Loss: ${result.loss?.toFixed(4)} | Epochs: ${result.epochs}`,
+      });
     } catch (err) {
       setStatusMsg({ type: "error", text: err.message });
     } finally {
       setLoading(false);
+      setTrainingProgress(null);
     }
   }
 
@@ -446,6 +464,15 @@ export default function MainPage({ token, onLogout }) {
               {/* IMAGE */}
               {imageUrl && (
                 <div className="nn-image-wrapper">
+                  {trainingProgress && (
+                    <div className="training-overlay">
+                      <div className="training-overlay-status">
+                        {trainingProgress.type === "queue_update"
+                          ? `Queue position: ${trainingProgress.position}`
+                          : "Training..."}
+                      </div>
+                    </div>
+                  )}
                   <img src={imageUrl} alt="Neural network visualization" />
                 </div>
               )}
@@ -461,6 +488,16 @@ export default function MainPage({ token, onLogout }) {
                     >
                       <option value="RELLU">RELLU</option>
                       <option value="SIGMOID">SIGMOID</option>
+                    </select>
+                  </div>
+                  <div className="config-field">
+                    <label>Loss Type</label>
+                    <select
+                      value={lossType}
+                      onChange={(e) => setLossType(e.target.value)}
+                    >
+                      <option value="MSE">MSE</option>
+                      <option value="CROSS_ENTROPY">CROSS_ENTROPY</option>
                     </select>
                   </div>
                   <div className="config-field">
@@ -484,6 +521,14 @@ export default function MainPage({ token, onLogout }) {
                       onChange={(e) =>
                         setLearningRate(Number(e.target.value) || 0.01)
                       }
+                    />
+                  </div>
+                  <div className="config-field config-field-checkbox">
+                    <label>Softmax</label>
+                    <input
+                      type="checkbox"
+                      checked={softmaxUse}
+                      onChange={(e) => setSoftmaxUse(e.target.checked)}
                     />
                   </div>
                 </div>

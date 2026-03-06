@@ -3,10 +3,6 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from nn_logic.loss import ILoss
-from nn_logic.mathh.models import Perceptron
-
-
 class ITrainingAlgorithm(ABC):
     
     @abstractmethod
@@ -17,9 +13,3 @@ class ITrainingAlgorithm(ABC):
         
     @abstractmethod
     def get_output_loss(self): pass
-
-    @abstractmethod
-    def get_loss_function(self) -> ILoss: pass 
-
-    @abstractmethod
-    def get_perceptron(self) -> Perceptron: pass

@@ -6,6 +6,5 @@ celery_app = Celery(
     "simple_emulator",
     broker=config.REDIS_URL,
     backend=config.REDIS_URL,
+    include=["ports.celery.tasks"],
 )
-
-celery_app.autodiscover_tasks(["ports.celery"])

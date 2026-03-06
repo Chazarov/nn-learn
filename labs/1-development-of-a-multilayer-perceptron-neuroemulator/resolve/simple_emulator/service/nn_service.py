@@ -5,7 +5,8 @@ from typing import List, Tuple
 import numpy as np
 import numpy.typing as npt
 
-from nn_logic.training.activation import ActivationType, ACTIVATIONS, SoftMax
+from nn_logic.models.activation import ActivationType
+from nn_logic.training.activation.activation import ActivationType, ACTIVATIONS, SoftMax
 from nn_logic.forwrdpropagation.forward_propagation import forward_propagation
 from nn_logic.loss import LossType, LOSSES
 from nn_logic.mathh.models import Sample, Perceptron
@@ -48,7 +49,7 @@ class NNService:
         softmax_use: bool,
         epochs: int,
         learning_rate: float,
-    ) -> None:
+    ) -> List[List[List[float]]]:
         """Обучает перцептрон (мутирует weights in-place)."""
         signs_count = len(samples[0].signs)
         classes_count = len(samples[0].class_marks)

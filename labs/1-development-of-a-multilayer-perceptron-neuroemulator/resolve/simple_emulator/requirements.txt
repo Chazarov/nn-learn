@@ -1,7 +1,7 @@
 pytest
 fastapi
 loguru
-uvicorn
+uvicorn[standard]
 opencv-python-headless
 python-multipart
 numpy
