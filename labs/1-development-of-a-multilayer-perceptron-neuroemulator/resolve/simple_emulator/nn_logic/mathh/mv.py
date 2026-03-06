@@ -178,10 +178,11 @@ def min_max_samples_normalaize(data: List[Sample], signs_count:int, classes_coun
     
 
 def apply_adjustments(
-    perceptron: List[List[List[float]]],
+    weights: List[List[List[float]]],
     adjustments: List[List[List[float]]],
-) -> None:
-    for q in range(len(perceptron)):
-        for i in range(len(perceptron[q])):
-            for j in range(len(perceptron[q][i])):
-                perceptron[q][i][j] += adjustments[q][i][j]
+) -> List[List[List[float]]]:
+    for q in range(len(weights)):
+        for i in range(len(weights[q])):
+            for j in range(len(weights[q][i])):
+                weights[q][i][j] += adjustments[q][i][j]
+    return weights

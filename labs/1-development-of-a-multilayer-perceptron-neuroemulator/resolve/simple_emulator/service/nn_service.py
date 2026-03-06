@@ -75,7 +75,7 @@ class NNService:
                 adjustments = bp.training_iteration_calculate(
                     sample.signs, outputs, sample.class_marks, weighted_sums,
                 )
-                apply_adjustments(weights, adjustments)
+                perceptron.weights = apply_adjustments(weights, adjustments)
 
     def predict(
         self,
