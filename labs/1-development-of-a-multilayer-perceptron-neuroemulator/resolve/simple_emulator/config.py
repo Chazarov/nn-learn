@@ -14,6 +14,7 @@ class Config:
     IMAGES_DIRECTORY = "data/visualisation"
     CSV_DIRECTORY = "data/learn"
     WEIGHTS_DIRECTORY = "data/weights"
+    SAMPLES_DIRECTORY = "samples"
 
 
     #Websockets

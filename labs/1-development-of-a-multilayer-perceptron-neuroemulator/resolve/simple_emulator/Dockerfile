@@ -12,7 +12,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN mkdir -p data/learn data/weights data/visualisation
+RUN mkdir -p data/learn data/weights data/visualisation samples
+COPY data/learn/sample_Iris.csv samples/sample_Iris.csv
+COPY data/learn/sample_colors.csv samples/sample_colors.csv
 
 EXPOSE 8000
 
