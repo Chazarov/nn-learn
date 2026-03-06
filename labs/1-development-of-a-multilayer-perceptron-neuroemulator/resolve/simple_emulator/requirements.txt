@@ -9,3 +9,5 @@ sqlalchemy
 psycopg2-binary
 PyJWT
 python-dotenv
+celery
+redis

@@ -4,6 +4,7 @@ from ports.api.handlers.perceptron_actions import router as p_actions_router
 from ports.api.handlers.images import router as images_router
 from ports.api.handlers.csv_files import router as csv_router
 from ports.api.handlers.auth import router as auth_router
+from ports.api.handlers.sockets.learn import router as ws_learn_router
 
 main_router = APIRouter(prefix="/api")
 
@@ -11,3 +12,4 @@ main_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 main_router.include_router(p_actions_router, prefix="/actions", tags=["actions"])
 main_router.include_router(images_router, prefix="/images", tags=["images"])
 main_router.include_router(csv_router, prefix="/csv", tags=["csv"])
+main_router.include_router(ws_learn_router, prefix="/ws", tags=["websocket"])

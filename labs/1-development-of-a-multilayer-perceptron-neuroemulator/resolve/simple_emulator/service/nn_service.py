@@ -58,7 +58,7 @@ class NNService:
 
         layers_count = len(weights) + 1
         activations = [ACTIVATIONS[activation_type]() for _ in range(layers_count - 1)]
-        loss = LOSSES[loss_type]
+        loss = LOSSES[loss_type]()
 
         if softmax_use:
             activations[-1] = SoftMax()
@@ -92,8 +92,8 @@ class NNService:
             input_vector, maxs=maxs, mins=mins, signs_count=input_size,
         )
 
-        layers_count = len(weights)
-        activations = [ACTIVATIONS[activation_type]() for _ in range(layers_count)]
+        layers_count = len(weights) + 1
+        activations = [ACTIVATIONS[activation_type]() for _ in range(layers_count - 1)]
         if softmax_use:
             activations[-1] = SoftMax()
 
@@ -102,6 +102,39 @@ class NNService:
         )
         output_vector, _ = forward_propagation(normalized_input, perceptron)
         return output_vector
+
+    def compute_loss(
+        self,
+        weights: List[List[List[float]]],
+        samples: List[Sample],
+        activation_type: ActivationType,
+        loss_type: LossType,
+        softmax_use: bool,
+    ) -> float:
+        """Средний loss по всем samples на текущих весах."""
+        signs_count = len(samples[0].signs)
+        classes_count = len(samples[0].class_marks)
+
+        normalized_samples, _, _ = min_max_samples_normalaize(
+            samples, signs_count=signs_count, classes_count=classes_count,
+        )
+
+        layers_count = len(weights) + 1
+        activations = [ACTIVATIONS[activation_type]() for _ in range(layers_count - 1)]
+        if softmax_use:
+            activations[-1] = SoftMax()
+
+        perceptron = Perceptron(
+            weights=weights, activations=activations, layers_count=layers_count,
+        )
+
+        loss_fn = LOSSES[loss_type]()
+        total_loss = 0.0
+        for sample in normalized_samples:
+            outputs, _ = forward_propagation(sample.signs, perceptron)
+            total_loss += loss_fn.perform(sample.class_marks, outputs)
+
+        return total_loss / len(normalized_samples)
 
     def get_visualisation(
         self,

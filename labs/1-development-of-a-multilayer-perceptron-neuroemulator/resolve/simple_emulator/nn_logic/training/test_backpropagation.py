@@ -1,24 +1,18 @@
 from typing import Any, List
 
 from nn_logic.training.backpropagation import BackPropagation
-from nn_logic.activation import Rellu
-from exceptions.test_exception import TestException
-from log import logger
+from nn_logic.mathh.models import Perceptron
 from nn_logic.loss import MSE
+from nn_logic.training.activation import Rellu
+from log import logger
+from exceptions.test_exception import TestException
 
+def test_bp_iteration():
 
-def test_backpropagation_iteration():
-    """
-    Checking the calculation of weight changes after the 
-    backpropagation training iteration
-    """
-    LEARNING_RATE = 0.1
     INPUTS = [0.5, 0.3]
-
-    OUTPUTS = [0.337]
-    EXPECTED_OUTPUTS = [1.0]
-
-    PERCEPTRON = \
+    LEARNING_RATE = 0.1
+    LAYERS_COUNT = 3
+    WEIGHTS = \
     [
         [
             [  0.1, 0.4,],
@@ -28,6 +22,9 @@ def test_backpropagation_iteration():
             [-0.2, 0.6, 0.5]
         ]
     ]
+
+    OUTPUTS = [0.337]
+    EXPECTED_OUTPUTS = [1.0]
 
     WEIGHTD_SUMS_OUTPUT = [
         [0.17, 0.31, 0.37],
@@ -47,28 +44,25 @@ def test_backpropagation_iteration():
     ]
 
 
+    p = Perceptron(weights=WEIGHTS, activations=[Rellu(), Rellu()], layers_count=LAYERS_COUNT)
 
-    backprop = BackPropagation(MSE(), LEARNING_RATE, PERCEPTRON, Rellu())
 
+    bp = BackPropagation(MSE(), LEARNING_RATE, p)
 
-    result = backprop.training_iteration_calculate(INPUTS, OUTPUTS, EXPECTED_OUTPUTS, WEIGHTD_SUMS_OUTPUT)
+    result = bp.training_iteration_calculate(INPUTS, OUTPUTS, EXPECTED_OUTPUTS, WEIGHTD_SUMS_OUTPUT)
 
     errors:List[Any] = list()
     for q in range(len(EXPECTED_WEIGHTS_CHANGES)):
         for i in range(len(EXPECTED_WEIGHTS_CHANGES[q])):
             for j in range(len(EXPECTED_WEIGHTS_CHANGES[q][i])):
                 w = EXPECTED_WEIGHTS_CHANGES[q][i][j]
+                # if w != result[q][i][j]:
                 if abs(w - result[q][i][j]) > 0.0001:
                     logger.error(f" Test error. incorrect weight  layer {q} | line {i} | column {j}")
-                    errors.append((q, i, j))
+                    errors.append({"position":(q, i, j), "expected":w , "received":result[q][i][j]})
     
 
     if(len(errors)):
         raise TestException(f" errors:  {errors}")
     else:
         logger.info("test complete!")
-
-
-
-
-

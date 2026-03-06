@@ -26,7 +26,7 @@ def forward_propagation(
     """
     
     p = perceptron
-    
+
     if len(inputs) != len(p.weights[0][0]):
         e_str = (
             f"incorrect size of inputs: expected {len(p.weights[0][0])}, got {len(inputs)}"

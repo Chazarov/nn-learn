@@ -1,3 +1,5 @@
+import math
+import traceback
 from typing import List, Tuple
 from random import uniform
 
@@ -12,11 +14,13 @@ def m_v_mtpc(m: List[List[float]], v: List[float]) -> List[float]:
     Matrix-vector multiplication: m (n x d) × v (d x 1) = result (n x 1)
     """
     if not m or not v:
+        traceback.print_exc()
         raise ArgumentException("Matrix or vector is empty")
     
     if len(m[0]) != len(v):
         e_str = f"Columns in matrix ({len(m[0])}) must equal vector length ({len(v)})"
         logger.error(e_str)
+        traceback.print_exc()
         raise ArgumentException(e_str)
     
     result: List[float] = []
@@ -45,6 +49,7 @@ def v_v_elementwise(v1: List[float], v2: List[float]) -> List[float]:
     if len(v1) != len(v2):
         e_str = f"Vectors must have equal length: {len(v1)} != {len(v2)}"
         logger.error(e_str)
+        traceback.print_exc()
         raise ArgumentException(e_str)
     
     result: List[float] = [v1[i] * v2[i] for i in range(len(v1))]
@@ -72,6 +77,7 @@ def t_mtx(matrix: List[List[float]]) -> List[List[float]]:
     if not matrix or not matrix[0]:
         e_str = "Matrix cannot be empty"
         logger.error(e_str)
+        traceback.print_exc()
         raise ArgumentException(e_str)
     
     num_rows = len(matrix)
@@ -82,6 +88,7 @@ def t_mtx(matrix: List[List[float]]) -> List[List[float]]:
         if len(row) != num_cols:
             e_str = f"All rows must have equal length: expected {num_cols}, got {len(row)}"
             logger.error(e_str)
+            traceback.print_exc()
             raise ArgumentException(e_str)
     
     # Create transposed matrix: columns become rows
@@ -105,7 +112,8 @@ def init_perceptron(architecture: List[int]) -> List[List[List[float]]]:
 
 
 def get_random_matrix(n_out: int, n_in: int) -> List[List[float]]:
-    return [[uniform(-1, 1) for _ in range(n_in)] for _ in range(n_out)]
+    limit = math.sqrt(6.0 / (n_in + n_out))
+    return [[uniform(-limit, limit) for _ in range(n_in)] for _ in range(n_out)]
 
 
 
@@ -118,12 +126,15 @@ def min_max_signs_normalize(signs:List[float], maxs:List[float], mins:List[float
 
 
     if len(maxs) != signs_count:
+        traceback.print_exc()
         logger.error(" The size of the maxs array is not equal to the value of the signs_count parameter")
         raise ArgumentException()
     if len(mins) != signs_count:
+        traceback.print_exc()
         logger.error(" The size of the mins array is not equal to the value of the signs_count parameter ")
         raise ArgumentException()
     if len(signs) != signs_count:
+        traceback.print_exc()
         logger.error(" The size of the signs array is not equal to the value of the signs_count parameter")
         raise ArgumentException()
     
@@ -143,10 +154,12 @@ def min_max_samples_normalaize(data: List[Sample], signs_count:int, classes_coun
         if len(data[i].signs) != signs_count:
             logger.error(" The number of signs in the example does not math the number passed" \
             "in the signs_count variable ")
+            traceback.print_exc()
             raise ArgumentException()
         if len(data[i].class_marks) != classes_count:
             logger.error(" The number of classes in the example does not math the number passed" \
             "in the classes_count variable ")
+            traceback.print_exc()
             raise ArgumentException()
         for j in range(signs_count):
             maxs[j] = max(maxs[j], data[i].signs[j])

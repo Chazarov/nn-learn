@@ -9,8 +9,16 @@ class Config:
 
     DATABASE_URL = os.getenv("DATABASE_URL")
 
+    REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
     IMAGES_DIRECTORY = "data/visualisation"
     CSV_DIRECTORY = "data/learn"
     WEIGHTS_DIRECTORY = "data/weights"
+
+
+    #Websockets
+
+    CELERY_QUEUE_KEY = "celery"
+    POLL_INTERVAL_SECONDS = 1.0
 
 config = Config()

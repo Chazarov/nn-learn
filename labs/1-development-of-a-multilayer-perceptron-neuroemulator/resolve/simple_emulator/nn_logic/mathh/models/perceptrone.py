@@ -1,5 +1,6 @@
 
 
+import traceback
 from typing import List
 
 from pydantic import BaseModel, model_validator
@@ -19,11 +20,13 @@ class Perceptron(BaseModel):
     @model_validator(mode='after')
     def check(self) -> 'Perceptron':
         if(len(self.weights) != (self.layers_count - 1)): 
-            logger.error("The length of the weights list must be equal to the layers_count-1 value.")
+            logger.error(f"The length of the weights list must be equal to the layers_count-1 value. Weights list length: {len(self.weights)} layers_count value: {self.layers_count}")
+            traceback.print_exc()
             raise ArgumentException()
         
         if(len(self.activations) != (self.layers_count - 1)):
-            logger.error("The length of the activations list must be equal to the layers_count-1 value.")
+            logger.error(f"The length of the activations list must be equal to the layers_count-1 value. Activations list length: {len(self.activations)} layers_count value: {self.layers_count}")
+            traceback.print_exc()
             raise ArgumentException()
         
         return self

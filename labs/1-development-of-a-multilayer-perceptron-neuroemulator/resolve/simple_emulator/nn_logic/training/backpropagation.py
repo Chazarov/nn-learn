@@ -138,7 +138,7 @@ class BackPropagation(ITrainingAlgorithm):
                     if q == 0:
                         y_prev = inputs[j]
                     else:
-                        y_prev = self.p.activations[q].perform(weighted_sums_output[q-1][j])
+                        y_prev = self.p.activations[q-1].perform(weighted_sums_output[q-1][j])
                     adjust = (-self.learning_rate) * local_errors[q][i] * y_prev
                     adjustments[q][i][j] = adjust
 
