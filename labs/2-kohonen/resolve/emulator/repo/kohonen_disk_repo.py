@@ -1,44 +1,66 @@
+import os
+import traceback
+
+import numpy as np
+
+from exceptions import DomainException, InternalServerException, NotFoundException
+from log import logger
 from models.project import NNData
 
+
 class KohonenDiskRepo:
-    # Сохранение сети кохонена на диск с использованием стандартных инструментов numpy. Файл сохраняется по пути dir именуется своим id + .npz. 
-    # Все поля NNData 
-    # должны быть сохранены
-    def __init__(self, directory:str):
+
+    def __init__(self, directory: str):
         self.dir = directory
 
-    def create(self, id:str, nn_data:NNData):
-        pass
+    def create(self, id: str, nn_data: NNData) -> None:
+        try:
+            os.makedirs(self.dir, exist_ok=True)
+            path = os.path.join(self.dir, f"{id}.npz")
+            np.savez(
+                path,
+                weights=nn_data.weights,
+                input_size=np.array([nn_data.input_size]),
+                mins=nn_data.mins,
+                maxs=nn_data.maxs,
+                clasters=nn_data.clasters,
+            )
+        except DomainException:
+            raise
+        except Exception as e:
+            logger.error(f"error while saving kohonen network: {e}")
+            traceback.print_exc()
+            raise InternalServerException()
 
     def delete(self, id: str) -> None:
-        """ Если не найдено то производит стандартную обработку и логгирование ошибки.
-         Такая обработка ошибок обязательна во всем приложении.
-          1) Все ошибки должны быть обработаны и обернуты в DomainExceptions. Если ошибка уже обработана то она пробрасывается наверх, если его не
-           нужно обработать , отреагировать каким то поведением.  
-           если ошибка не опознана она обертывается в InternalServerException. Ошибка логгируется только один раз - при возникновении после пробрасывается или 
-           обрабатывается. Пример:
-           
+        try:
+            path = os.path.join(self.dir, f"{id}.npz")
+            if not os.path.exists(path):
+                raise NotFoundException(f"Kohonen network '{id}' not found")
+            os.remove(path)
+        except DomainException:
+            raise
+        except Exception as e:
+            logger.error(f"error while deleting kohonen network: {e}")
+            traceback.print_exc()
+            raise InternalServerException()
 
-            try:
-                with self.session_factory() as session:
-                    db_user = UserDB(password_hash=password_hash, email=email, name=name)
-                    session.add(db_user)
-                    session.commit()
-                    session.refresh(db_user)
-                    return User(id=db_user.id, password_hash=db_user.password_hash,
-                                name=db_user.name, created_at=db_user.created_at, email=db_user.email)
-            except DomainException:
-                raise
-            except IntegrityError as e:
-                logger.error(f"user with same data already exists: {e}")
-                traceback.print_exc()
-                raise AlreadyExists()
-            except Exception as e:
-                logger.error(f"error while creating user: {e}")
-                traceback.print_exc()
-                raise InternalServerException()
-           """
-        pass
-    
-    def get_by_id(self, id:str) -> NNData:
-        pass
+    def get_by_id(self, id: str) -> NNData:
+        try:
+            path = os.path.join(self.dir, f"{id}.npz")
+            if not os.path.exists(path):
+                raise NotFoundException(f"Kohonen network '{id}' not found")
+            data = np.load(path, allow_pickle=False)
+            return NNData(
+                weights=data["weights"].astype(np.float64),
+                input_size=int(data["input_size"].item()),
+                mins=data["mins"].astype(np.float64),
+                maxs=data["maxs"].astype(np.float64),
+                clasters=data["clasters"].astype(np.float64),
+            )
+        except DomainException:
+            raise
+        except Exception as e:
+            logger.error(f"error while getting kohonen network by id: {e}")
+            traceback.print_exc()
+            raise InternalServerException()
