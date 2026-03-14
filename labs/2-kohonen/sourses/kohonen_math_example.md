@@ -60,7 +60,7 @@ $$
 \mathbf{W}_j^{\text{new}} = \mathbf{W}_j^{\text{old}} + \alpha \cdot h(d_{\text{top}}(j, c)) \cdot (\mathbf{X} - \mathbf{W}_j^{\text{old}})
 $$
 
-*где $\alpha$ - скорость обучения*
+*где $\alpha$ - скорость обучения;$\mathbf{W}_j^{\text{new}}$ — новые веса нейрона $j$;$\mathbf{W}_j^{\text{old}}$ — старые веса нейрона $j$;$\alpha$ — скорость обучения $(0 < \alpha \leq 1)$;$h(d_{\text{top}}(j, c))$ — функция соседства от победителя $c$ до нейрона $j$;$d_{\text{top}}(j, c)$ — топологическое расстояние между $j$ и $c$;$\mathbf{X}$ — входной вектор;$c$ — индекс нейрона-победителя;*
 
 ---
 

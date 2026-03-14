@@ -1,0 +1,1 @@
+from nn_core.vector_distance_calculation.base import IVectorDistanceCalculator # type: ignore[assignment]

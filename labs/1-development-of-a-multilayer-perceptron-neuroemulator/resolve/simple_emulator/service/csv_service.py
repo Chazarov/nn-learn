@@ -44,7 +44,7 @@ class CsvService:
         self.init_sample("sample_Iris.csv", user_id)
         self.init_sample("sample_colors.csv", user_id)
 
-    def init_sample(self, sample_name, user_id):
+    def init_sample(self, sample_name:str, user_id:str):
         sample_path = os.path.join(config.SAMPLES_DIRECTORY, sample_name)
         with open(sample_path, "rb") as f:
             content = f.read()
