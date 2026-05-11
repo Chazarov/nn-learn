@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:16
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: perceptron_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d perceptron_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mlp:
+    build: ./simple_emulator
+    # ports:
+    #   - "8000:8000"
+    env_file:
+      - ./simple_emulator/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/perceptron_db
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - mlp_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: ./simple_emulator
+    command: celery -A celery_app worker --loglevel=info
+    env_file:
+      - ./simple_emulator/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/perceptron_db
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - mlp_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+
+
+
+  frontend:
+    build: ./frontend
+    # ports:
+    #   - "3000:80"
+    depends_on:
+      - mlp
+    networks:
+      - default
+      - caddy_net
+    container_name: nnemulator_frontend
+
+volumes:
+  postgres_data:
+  mlp_data:
+
+
+networks:
+  caddy_net:
+    external: true

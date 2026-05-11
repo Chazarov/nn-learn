@@ -1,0 +1,418 @@
+{
+  "info": {
+    "_postman_id": "mlp-api-collection",
+    "name": "Multilayer Perceptron API",
+    "description": "API collection for Multilayer Perceptron Emulator. Base URL: http://localhost:8000/api.\n\nАвторизованные запросы используют переменную {{token}}, которая автоматически заполняется после выполнения Login или Sign Up.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "project_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "csv_file_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "image_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Sign Up",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token saved:', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"name\": \"testuser\",\n  \"password\": \"secret123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/sign-up",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "sign-up"]
+            },
+            "description": "Регистрация нового пользователя. Возвращает JWT-токен, который автоматически сохраняется в переменную {{token}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) {",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token saved:', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"secret123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Вход в систему. Возвращает JWT-токен, который автоматически сохраняется в переменную {{token}}."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "CSV",
+      "item": [
+        {
+          "name": "Upload CSV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) {",
+                  "    pm.collectionVariables.set('csv_file_id', json.id);",
+                  "    console.log('CSV file id saved:', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "CSV-файл с обучающей выборкой. Формат: первый столбец — id, средние — признаки, последний — метка класса."
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/csv/upload",
+              "host": ["{{base_url}}"],
+              "path": ["csv", "upload"]
+            },
+            "description": "Загрузить CSV-датасет. ID загруженного файла автоматически сохраняется в {{csv_file_id}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Get CSV Files",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/csv/",
+              "host": ["{{base_url}}"],
+              "path": ["csv", ""]
+            },
+            "description": "Список всех CSV-файлов текущего пользователя."
+          },
+          "response": []
+        },
+        {
+          "name": "Download CSV",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/csv/{{csv_file_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["csv", "{{csv_file_id}}"]
+            },
+            "description": "Скачать CSV-файл по id. Возвращает файл с Content-Disposition."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete CSV",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/csv/{{csv_file_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["csv", "{{csv_file_id}}"]
+            },
+            "description": "Удалить загруженный CSV-файл по id."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Actions",
+      "item": [
+        {
+          "name": "Init Perceptron",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.project && json.project.id) {",
+                  "    pm.collectionVariables.set('project_id', json.project.id);",
+                  "    console.log('Project id saved:', json.project.id);",
+                  "}",
+                  "if (json.image_id) {",
+                  "    pm.collectionVariables.set('image_id', json.image_id);",
+                  "    console.log('Image id saved:', json.image_id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_id\": \"{{csv_file_id}}\",\n  \"hidden_layers_architecture\": [6, 4]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/actions/init",
+              "host": ["{{base_url}}"],
+              "path": ["actions", "init"]
+            },
+            "description": "Инициализировать новый перцептрон случайными весами. project_id и image_id автоматически сохраняются в переменные коллекции."
+          },
+          "response": []
+        },
+        {
+          "name": "Train Perceptron",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.image_id) {",
+                  "    pm.collectionVariables.set('image_id', json.image_id);",
+                  "    console.log('Image id updated:', json.image_id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"project_id\": \"{{project_id}}\",\n  \"activation_type\": \"SIGMOID\",\n  \"softmax_use\": false,\n  \"loss_type\": \"MSE\",\n  \"epochs\": 100,\n  \"learning_rate\": 0.1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/actions/learn/",
+              "host": ["{{base_url}}"],
+              "path": ["actions", "learn", ""]
+            },
+            "description": "Обучить перцептрон. activation_type: RELLU | SIGMOID. loss_type: MSE | CROSS_ENTROPY. softmax_use — необязательное, по умолчанию false."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Answer",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"perceptron_id\": \"{{project_id}}\",\n  \"input_vector\": [5.1, 3.5, 1.4, 0.2],\n  \"activation_type\": \"SIGMOID\",\n  \"softmax_use\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/actions/get_answer",
+              "host": ["{{base_url}}"],
+              "path": ["actions", "get_answer"]
+            },
+            "description": "Классифицировать входной вектор. activation_type и softmax_use должны совпадать с использованными при обучении."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Projects",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/actions/projects",
+              "host": ["{{base_url}}"],
+              "path": ["actions", "projects"]
+            },
+            "description": "Список всех проектов текущего пользователя."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project Data",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/actions/project/{{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["actions", "project", "{{project_id}}"]
+            },
+            "description": "Получить метаданные и параметры нейросети проекта (без весов)."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/actions/projects/{{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["actions", "projects", "{{project_id}}"]
+            },
+            "description": "Удалить проект и связанный файл весов."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Images",
+      "item": [
+        {
+          "name": "Get Visualisation Image",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/images/{{image_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["images", "{{image_id}}"]
+            },
+            "description": "Получить PNG-изображение визуализации весов перцептрона. image_id совпадает с id проекта."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
