@@ -1,11 +1,11 @@
 import numpy as np
 import numpy.typing as npt
 
-from nn_core.topologic_distance import ITopologicCalculator
-from nn_core.neighbour_function import INeighbourFunction
-from nn_core.vector_distance_calculation import IVectorDistanceCalculator
-from nn_core.visualisation import get_component_planes_visualisation, get_u_matrix_visualisation
-from nn_core.weights_updator import WeightApdator
+from lib.kohonen.topologic_distance import ITopologicCalculator
+from lib.kohonen.neighbour_function import INeighbourFunction
+from lib.kohonen.vector_distance_calculation import IVectorDistanceCalculator
+from lib.kohonen.visualisation import get_component_planes_visualisation, get_u_matrix_visualisation
+from lib.kohonen.weights_updator import WeightApdator
 
 
 class KohonenNetworkService:
