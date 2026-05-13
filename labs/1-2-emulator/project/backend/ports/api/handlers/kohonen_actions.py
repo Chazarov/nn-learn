@@ -42,7 +42,11 @@ def init_new_kohonen_network(
             user_id = payload.user_id, 
             created_at=project.created_at, 
             csv_file_id=file_id, 
-            nn_data=NNDataWithoutWeights(input_size=nn_data.input_size, mins=nn_data.mins, maxs=nn_data.maxs, classes=nn_data.classes)),
+            nn_data=NNDataWithoutWeights(
+                input_size=nn_data.input_size, 
+                mins=nn_data.mins, 
+                maxs=nn_data.maxs, 
+                classes=nn_data.classes)),
         "image_id": image_id,
     }
 
@@ -57,7 +61,21 @@ def learn_kohonen_network(
     initial_neighborhood_radius: float = Body(...),
     neighbourhood_function: NeighbourhoodFunctionType = Body(...),
     topology_distance: TopologyDistanceType = Body(...),
-) -> Dict[str, Any]: ...
+) -> Dict[str, Any]: 
+
+    return {
+            "project": ProjectWithDataWithoutWeights(
+                id = project.id, 
+                user_id = payload.user_id, 
+                created_at=project.created_at, 
+                csv_file_id=file_id, 
+                nn_data=NNDataWithoutWeights(
+                    input_size=nn_data.input_size, 
+                    mins=nn_data.mins, 
+                    maxs=nn_data.maxs, 
+                    classes=nn_data.classes)),
+            "image_id": image_id,
+        }
 
 
 @router.post("/get_answer")
@@ -65,4 +83,9 @@ def get_answer_kohonen(
     token: str = Depends(oauth2_scheme),
     project_id: str = Body(...),
     input_vector: List[float] = Body(...),
-) -> Dict[str, Any]: ...
+) -> Dict[str, Any]: 
+    return {
+        "predicted": predicted,
+        "confidences": confidences,
+        "output": output_vector,
+    }

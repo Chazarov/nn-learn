@@ -1,1 +1,0 @@
-from lib.perceptrone.forwrdpropagation.forward_propagation import forward_propagation #type: ignore 

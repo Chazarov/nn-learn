@@ -6,7 +6,7 @@ import numpy as np
 from models.progect_nn import Project, NNData, ProjectWithData
 from repository.image_disk_repository import ImageRepository
 from repository.weights_disk_repository import WeightsDiskRepository
-from repository.weights_postgres_repository import ProjectsRepository
+from repository.projects_postgres_repository import ProjectsRepository
 from exceptions.domain import DomainException
 from exceptions.internal_server_exception import InternalServerException
 from log import logger

@@ -1,6 +1,8 @@
 import uuid
 import time
 
+from models.progect_nn import ProjectType
+
 from sqlalchemy import String, BigInteger, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -39,6 +41,7 @@ class ProjectDB(Base):
     __tablename__ = "projects"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=_generate_uuid)
+    project_type: Mapped[ProjectType] = mapped_column(String, nullable=False)
     user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False)
     csv_file_id: Mapped[str] = mapped_column(String, ForeignKey("csv_files.id"), nullable=False)
     created_at: Mapped[int] = mapped_column(BigInteger, nullable=False, default=_now_ts)

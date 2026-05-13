@@ -7,7 +7,7 @@ from exceptions.not_found import NotFoundException
 
 from repository.image_disk_repository import ImageRepository
 from repository.weights_disk_repository import WeightsDiskRepository
-from repository.weights_postgres_repository import ProjectsRepository
+from repository.projects_postgres_repository import ProjectsRepository
 from repository.user_postgres_repository import UserRepository
 from repository.csv_disk_repository import CsvDiskRepository
 from repository.csv_postgres_repository import CSVRelativeRepository
