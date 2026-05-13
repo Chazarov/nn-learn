@@ -1,20 +1,22 @@
 import numpy as np
 import numpy.typing as npt
 
-from lib.kohonen.topologic_distance import ITopologicCalculator
+from lib.kohonen.decreasing import decreasing_linear_rate
+from lib.kohonen.normalization import min_max_normalize, normalize_samples_min_max
 from lib.kohonen.neighbour_function import INeighbourFunction
+from lib.kohonen.topologic_distance import ITopologicCalculator
 from lib.kohonen.vector_distance_calculation import IVectorDistanceCalculator
 from lib.kohonen.visualisation import (
     get_component_planes_visualisation,
     get_u_matrix_visualisation,
 )
 from lib.kohonen.weights_updator import WeightApdator
-from lib.kohonen.normalization.weights_normalization import min_max_normalize
+
 
 class KohonenNetworkService:
     """Сеть Кохонена с 2D-топологией (карта размера ``rows × cols``).
 
-    Веса хранятся как матрица ``(rows * cols, input_size)``; форма сетки
+    Веса хранятся как матрица ``(rows *cols, input_size)``; форма сетки
     необходима для топологического расстояния (см.
     :class:`ITopologicCalculator`) и для визуализации.
     """
@@ -44,7 +46,6 @@ class KohonenNetworkService:
                 f"mins/maxs length must equal input_size={input_size}, "
                 f"got len(mins)={lo.size}, len(maxs)={hi.size}"
             )
-        # Прототипы в [0, 1]^d — та же шкала, что у min-max нормализованных входов.
         return np.random.rand(rows * cols, input_size).astype(np.float64)
 
     def train(
@@ -54,42 +55,34 @@ class KohonenNetworkService:
         epochs: int,
         mins: npt.NDArray[np.float64],
         maxs: npt.NDArray[np.float64],
-        learning_rate: float,
+        learning_rate_start: float,
+        learning_rate_end: float,
+        sigma_start: float,
+        sigma_end: float,
         vector_distance_calc: IVectorDistanceCalculator,
         top_dist_calc: ITopologicCalculator,
         neighbour_func: INeighbourFunction,
     ) -> npt.NDArray[np.float64]:
         """
-        Один проход по выборке: для каждого образа вход нормализуется теми же ``mins``/``maxs``,
-        что и в :meth:`predict`; обновление весов идёт в этом же пространстве признаков.
+        Обучение SOM: ``epochs`` проходов по выборке; на каждом глобальном шаге скорость
+        и ``sigma`` задаются :func:`decreasing_linear_rate` и :func:`decreasing_linear_sigma`
+        из ``lib.kohonen.decreasing``. Выборка один раз нормализуется через
+        :func:`normalize_samples_min_max` по ``mins``/``maxs`` (построчно то же, что
+        :func:`min_max_normalize` в :meth:`predict`).
 
-        **Что ещё нужно для полноценного цикла обучения SOM (за пределами текущей реализации):**
-
-        1. **Несколько эпох** — многократный проход по обучающей выборке (возможно с
-           перемешиванием порядка образов между эпохами).
-        2. **Расписание скорости обучения** ``alpha(t)`` — убывание от большего к
-           меньшему по мере прогресса (номер эпохи / шаг), а не фиксированная константа.
-        3. **Расписание радиуса соседства** ``sigma(t)`` — сужение «колокола»
-           Гаусса (или другой функции соседства) по времени; сейчас в ``WeightApdator``
-           используется фиксированное значение.
-        4. **Согласованная топология** — ``ITopologicCalculator`` с параметром ``cols``;
-           число нейронов ``weights.shape[0]`` должно быть кратно ``cols`` (прямоугольная
-           решётка ``rows × cols``).
-        5. **Согласованная метрика в данных** — тот же ``IVectorDistanceCalculator``, что
-           отражает расстояние между входом и весами (здесь — квадрат евклидова расстояния
-           в нормализованном пространстве).
-        6. **Инициализация весов** — в одной шкале с обучением (например через
-           :meth:`init_network` с теми же ``mins``/``maxs``, что и при ``train``/``predict``).
-        7. **Границы нормализации** — ``mins``/``maxs`` по обучающей выборке (или по
-           train+val); одни и те же при обучении и инференсе.
-        8. **Критерий остановки** — максимум эпох, порог изменения весов / ошибки карты,
-           ранняя остановка по валидации (по задаче).
+        **Дополнительно для «полного» цикла (по желанию):** критерий остановки по
+        качеству карты, валидация, сохранение чекпоинтов.
         """
         weights = weights.copy()
         if samples.size == 0:
             return weights
         if samples.ndim != 2:
-            raise ValueError(f"samples must be 2D array (n_samples, n_features), got shape {samples.shape}")
+            raise ValueError(
+                f"samples must be 2D array (n_samples, n_features), got shape {samples.shape}"
+            )
+        if epochs < 1:
+            raise ValueError(f"epochs must be >= 1, got {epochs}")
+
         dim = samples.shape[1]
         lo = np.asarray(mins, dtype=np.float64).ravel()
         hi = np.asarray(maxs, dtype=np.float64).ravel()
@@ -99,12 +92,29 @@ class KohonenNetworkService:
                 f"got len(mins)={lo.size}, len(maxs)={hi.size}"
             )
 
-        weight_updator = WeightApdator(top_dist_calc, neighbour_func, learning_rate)
-        for sample in samples:
-            x = min_max_normalize(sample, lo, hi)
-            distances = vector_distance_calc.perform(weights, x)
-            output_vector = -distances
-            weight_updator.update_weights(weights, learning_rate, output_vector, x)
+        n_samples = samples.shape[0]
+        total_steps = epochs * n_samples
+        normalized_samples = normalize_samples_min_max(samples, lo, hi)
+        weight_updator = WeightApdator(
+            top_dist_calc, neighbour_func, learning_rate_start
+        )
+        global_step = 0
+        for _ in range(epochs):
+            order = np.random.permutation(n_samples)
+            for idx in order:
+                x = normalized_samples[int(idx)]
+                lr = decreasing_linear_rate(
+                    global_step, total_steps, learning_rate_start, learning_rate_end
+                )
+                sigma = decreasing_linear_sigma(
+                    global_step, total_steps, sigma_start, sigma_end
+                )
+                distances = vector_distance_calc.perform(weights, x)
+                output_vector = -distances
+                weight_updator.update_weights(
+                    weights, lr, output_vector, x, sigma
+                )
+                global_step += 1
         return weights
 
     def predict(

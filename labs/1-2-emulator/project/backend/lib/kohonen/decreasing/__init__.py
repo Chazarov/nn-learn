@@ -1,3 +1,3 @@
-from lib.kohonen.learning_rate.linear import linear_learning_rate
+from lib.kohonen.decreasing.linear import decreasing_linear_rate, decreasing_linear_sigma
 
-__all__ = ["linear_learning_rate"]
+__all__ = ["decreasing_linear_rate", "decreasing_linear_sigma"]

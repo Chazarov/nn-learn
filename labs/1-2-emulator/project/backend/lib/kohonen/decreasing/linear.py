@@ -1,7 +1,20 @@
-"""Линейное расписание скорости обучения для SOM."""
+"""Линейные убывающие расписания для SOM (скорость обучения и ширина соседства)."""
 
 from exceptions import ArgumentException
 from log import logger
+
+
+def _linear_schedule(
+    step_index: int,
+    total_steps: int,
+    value_start: float,
+    value_end: float,
+) -> float:
+    k = min(max(int(step_index), 0), total_steps - 1)
+    if total_steps == 1:
+        return float(value_start)
+    t = k / float(total_steps - 1)
+    return float(value_start + (value_end - value_start) * t)
 
 
 def decreasing_linear_rate(
@@ -31,9 +44,4 @@ def decreasing_linear_rate(
         logger.error(e_str)
         raise ArgumentException(e_str)
 
-    k = min(max(int(step_index), 0), total_steps - 1)
-    if total_steps == 1:
-        return float(rate_start)
-
-    t = k / float(total_steps - 1)
-    return float(rate_start + (rate_end - rate_start) * t)
+    return _linear_schedule(step_index, total_steps, rate_start, rate_end)
