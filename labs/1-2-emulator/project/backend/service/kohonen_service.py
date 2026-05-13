@@ -9,7 +9,7 @@ from lib.kohonen.visualisation import (
     get_u_matrix_visualisation,
 )
 from lib.kohonen.weights_updator import WeightApdator
-
+from lib.kohonen.normalization.weights_normalization import min_max_normalize
 
 class KohonenNetworkService:
     """Сеть Кохонена с 2D-топологией (карта размера ``rows × cols``).
@@ -56,7 +56,7 @@ class KohonenNetworkService:
         mins: npt.NDArray[np.float64],
         maxs: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
-        normalized = (input_vector - mins) / (maxs - mins + 1e-10)
+        normalized = min_max_normalize(input_vector, mins, maxs)
         distances = vector_distance_calc.perform(weights, normalized)
         winner_idx = np.argmin(distances)
         return np.array([float(winner_idx)], dtype=np.float64)
