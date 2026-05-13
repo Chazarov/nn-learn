@@ -1,7 +1,9 @@
 import traceback
-from typing import Any, Dict, List
+from typing import Annotated, Any, Dict, List
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path
+
+from config import config, num_constraint_validator
 
 from lib.perceptrone.models.activation import ActivationType
 from lib.perceptrone.loss import LossType
@@ -32,8 +34,14 @@ def _csv_data_to_samples(data: CsvFileData) -> List[Sample]:
 def init_new_kohonen_network(
     token: str = Depends(oauth2_scheme),
     file_id: str = Body(...),
-    input_layer_size: int = Body(...),
-    output_layer_size: int = Body(...)
+    input_layer_size: Annotated[
+        int,
+        num_constraint_validator(config.PublicConstraints.KOHONEN_INPUT_LAYER_SIZE),
+    ] = Body(...),
+    output_layer_size: Annotated[
+        int,
+        num_constraint_validator(config.PublicConstraints.KOHONEN_LAYER_SIZE_RANGE),
+    ] = Body(...),
 ) -> Dict[str, Any]: ... 
 
 
