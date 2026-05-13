@@ -1,13 +1,19 @@
+from enum import Enum
 from typing import List
 
 from pydantic import BaseModel
 
+class ProjectType(str, Enum):
+    KOHONEN = "KOHONEN"
+    PERCEPTRON = "PERCEPTRON"
+
 
 class Project(BaseModel):
-    id: str
+    project_type: ProjectType
     user_id: str
     created_at: int
-    csv_file_id:str
+    csv_file_id: str
+
 class NNDataWithoutWeights(BaseModel):
     input_size: int
     mins: List[float]
