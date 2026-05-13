@@ -1,1 +1,1 @@
-from nn_logic.training.activation.activation import *# type: ignore
+from lib.perceptrone.training.activation.activation import *# type: ignore

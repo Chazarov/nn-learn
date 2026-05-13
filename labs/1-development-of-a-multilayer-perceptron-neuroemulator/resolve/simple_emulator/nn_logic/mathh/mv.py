@@ -4,7 +4,7 @@ from typing import List, Tuple
 from random import uniform
 
 
-from nn_logic.mathh.models import Sample
+from lib.perceptrone.mathh.models import Sample
 from exceptions.argument_exception import ArgumentException
 from log import logger
 

@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 from exceptions import UnexpectedBehaviourException
 from log import logger
-from nn_logic.models.activation import IActivation, ActivationType
+from lib.perceptrone.models.activation import IActivation, ActivationType
 
 
 

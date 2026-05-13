@@ -1,1 +1,1 @@
-from nn_logic.training.backpropagation import BackPropagation # type: ignore[unused-variable]
+from lib.perceptrone.training.backpropagation import BackPropagation # type: ignore[unused-variable]

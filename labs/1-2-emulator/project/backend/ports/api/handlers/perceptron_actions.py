@@ -1,13 +1,13 @@
 import traceback
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path
+from fastapi import APIRouter, Body, Depends, HTTPException
 
-from nn_logic.models.activation import ActivationType
-from nn_logic.loss import LossType
-from nn_logic.mathh.models import Sample
+from lib.perceptrone.models.activation import ActivationType
+from lib.perceptrone.loss import LossType
+from lib.perceptrone.mathh.models import Sample
 from models.csv_file import CsvFileData
-from models.progect_nn import NNData, ProjectWithData
+from models.progect_nn import NNData, NNDataWithoutWeights, ProjectWithData, ProjectWithDataWithoutWeights
 
 from container import csv_service, auth_service, project_service, nn_service
 from exceptions.auth_exception import AuthException
@@ -72,12 +72,11 @@ def init_new_perceptron(
         raise HTTPException(status_code=500, detail="Internal server error")
 
     return {
-        "project": ProjectWithData(id = project.id, 
+        "project": ProjectWithDataWithoutWeights(id = project.id, 
                                    user_id = payload.user_id, 
                                    created_at=project.created_at,
                                    csv_file_id=file_id,
-                                   nn_data=NNData(weights=weights, 
-                                                  input_size=nn_data.input_size,
+                                   nn_data=NNDataWithoutWeights(input_size=nn_data.input_size,
                                                   mins=nn_data.mins,
                                                   maxs=nn_data.maxs,
                                                   classes=nn_data.classes),
@@ -189,59 +188,3 @@ def get_answer(
         "output": output_vector,
     }
 
-
-@router.get("/projects")
-def get_all_projects(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
-    try:
-        payload = auth_service.token_validate(token)
-    except AuthException as e:
-        raise HTTPException(status_code=401, detail=str(e))
-
-    try:
-        projects = project_service.get_projects(payload.user_id)
-        return {"projects": [p.model_dump() for p in projects]}
-    except DomainException as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"error while getting projects: {e}")
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Internal server error")
-
-@router.get("/project/{project_id}")
-def get_project_data(token: str = Depends(oauth2_scheme),
-    project_id:str = Path(...)) -> Dict[str, Any]:
-
-    try:
-        payload = auth_service.token_validate(token)
-    except AuthException as e:
-        raise HTTPException(status_code=401, detail=str(e))
-
-    try:
-        project = project_service.get_project(payload.user_id, project_id)
-        return {"project": project.model_dump()}
-    except DomainException as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"error while getting projects: {e}")
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Internal server error")
-
-
-@router.delete("/projects/{project_id}")
-def delete_project(
-    project_id: str = Path(...),
-    token: str = Depends(oauth2_scheme),
-) -> Dict[str, Any]:
-    try:
-        payload = auth_service.token_validate(token)
-    except AuthException as e:
-        raise HTTPException(status_code=401, detail=str(e))
-
-    try:
-        project_service.delete_project(payload.user_id, project_id)
-    except NotFoundException as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except InternalServerException:
-        raise HTTPException(status_code=500, detail="Internal server error")
-
-    return {"deleted": project_id}

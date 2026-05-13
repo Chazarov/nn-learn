@@ -1,7 +1,7 @@
 from typing import Any, List
 
-from nn_logic.mathh.models import Sample
-from nn_logic.mathh.mv import (
+from lib.perceptrone.mathh.models import Sample
+from lib.perceptrone.mathh.mv import (
     min_max_function,
     min_max_signs_normalize,
     min_max_samples_normalaize,

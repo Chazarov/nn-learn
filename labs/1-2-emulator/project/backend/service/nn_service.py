@@ -5,19 +5,19 @@ from typing import List, Tuple
 import numpy as np
 import numpy.typing as npt
 
-from nn_logic.models.activation import ActivationType
-from nn_logic.training.activation.activation import ActivationType, ACTIVATIONS, SoftMax
-from nn_logic.forwrdpropagation.forward_propagation import forward_propagation
-from nn_logic.loss import LossType, LOSSES
-from nn_logic.mathh.models import Sample, Perceptron
-from nn_logic.mathh.mv import (
+from lib.perceptrone.models.activation import ActivationType
+from lib.perceptrone.training.activation.activation import ActivationType, ACTIVATIONS, SoftMax
+from lib.perceptrone.forwrdpropagation.forward_propagation import forward_propagation
+from lib.perceptrone.loss import LossType, LOSSES
+from lib.perceptrone.mathh.models import Sample, Perceptron
+from lib.perceptrone.mathh.mv import (
     apply_adjustments,
     init_perceptron as build_perceptron,
     min_max_samples_normalaize,
     min_max_signs_normalize,
 )
-from nn_logic.training.backpropagation import BackPropagation
-from nn_logic.visualisation.visualisation import get_visualisation as _get_visualisation, ColorTheme
+from lib.perceptrone.training.backpropagation import BackPropagation
+from lib.perceptrone.visualisation.visualisation import get_visualisation as _get_visualisation, ColorTheme
 
 
 class NNService:

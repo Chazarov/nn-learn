@@ -1,11 +1,11 @@
 from typing import Any, List
 
-from nn_logic.training.backpropagation import BackPropagation
-from nn_logic.mathh.models import Perceptron
-from nn_logic.loss import MSE
-from nn_logic.training.activation.activation import Rellu
+from lib.perceptrone.training.backpropagation import BackPropagation
+from lib.perceptrone.mathh.models import Perceptron
+from lib.perceptrone.loss import MSE
+from lib.perceptrone.training.activation.activation import Rellu
 
-from nn_logic.mathh.mv import (
+from lib.perceptrone.mathh.mv import (
     apply_adjustments
 )
 

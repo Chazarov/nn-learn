@@ -6,7 +6,7 @@ from typing import List
 from pydantic import BaseModel, model_validator
 
 from exceptions.argument_exception import ArgumentException
-from nn_logic.models.activation import IActivation
+from lib.perceptrone.models.activation import IActivation
 from log import logger
 
 

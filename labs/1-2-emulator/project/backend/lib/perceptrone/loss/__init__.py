@@ -1,1 +1,1 @@
-from nn_logic.loss.loss import * # type: ignore[unused-variable]
+from lib.perceptrone.loss.loss import * # type: ignore[unused-variable]

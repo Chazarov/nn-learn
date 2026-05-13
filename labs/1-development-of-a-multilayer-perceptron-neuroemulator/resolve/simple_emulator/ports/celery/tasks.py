@@ -2,9 +2,9 @@ from typing import Any, Dict, List
 
 from celery import shared_task
 
-from nn_logic.mathh.models import Sample
-from nn_logic.models.activation import ActivationType
-from nn_logic.loss import LossType
+from lib.perceptrone.mathh.models import Sample
+from lib.perceptrone.models.activation import ActivationType
+from lib.perceptrone.loss import LossType
 
 from container import project_service, csv_service, nn_service
 from log import logger

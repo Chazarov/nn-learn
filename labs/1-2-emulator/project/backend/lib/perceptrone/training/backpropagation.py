@@ -2,12 +2,12 @@
 from typing import List
 
 
-from nn_logic.training.itraining_algorithm import ITrainingAlgorithm
-from nn_logic.loss import ILoss, LossType
-# from nn_logic.models.activation import IActivation
-from nn_logic.mathh import mv
-from nn_logic.mathh.models import Perceptron
-from nn_logic.models.activation import ActivationType
+from lib.perceptrone.training.itraining_algorithm import ITrainingAlgorithm
+from lib.perceptrone.loss import ILoss, LossType
+# from lib.perceptrone.models.activation import IActivation
+from lib.perceptrone.mathh import mv
+from lib.perceptrone.mathh.models import Perceptron
+from lib.perceptrone.models.activation import ActivationType
 
 
 # from config import config
