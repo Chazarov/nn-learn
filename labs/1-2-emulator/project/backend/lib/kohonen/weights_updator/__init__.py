@@ -18,10 +18,9 @@ class WeightApdator():
 
 
     def update_weights(self, weights: npt.NDArray[np.float64], learn_rate: float,
-                       output_vector: npt.NDArray[np.float64], input_vector: npt.NDArray[np.float64]):
+                       output_vector: npt.NDArray[np.float64], input_vector: npt.NDArray[np.float64], sigma: float):
         
         num_clusters, _ = weights.shape 
-        sigma:float = 1.0
 
         if learn_rate > 1 or learn_rate <= 0:
             e_str = f"learn_rate must be in the range 0 < learn_rate <= 1. learn rate: {learn_rate}"
