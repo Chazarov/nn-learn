@@ -1,7 +1,15 @@
 import traceback
-from typing import Any, Dict, List
+from typing import Annotated as Annot, Any, Dict, List
 
 from fastapi import APIRouter, Body, Depends, HTTPException
+
+from config import (
+    config,
+    finite_input_vector_validator as finite_in_vec,
+    float_constraint_validator as fcv,
+    hidden_layers_list_validator as hllv,
+    num_constraint_validator as ncv,
+)
 
 from lib.perceptrone.models.activation import ActivationType
 from lib.perceptrone.loss import LossType
@@ -36,7 +44,10 @@ def _csv_data_to_samples(data: CsvFileData) -> List[Sample]:
 def init_new_perceptron(
     token: str = Depends(oauth2_scheme),
     file_id: str = Body(...),
-    hidden_layers_architecture: List[int] = Body(...),
+    hidden_layers_architecture: Annot[
+        List[int],
+        hllv(config.PublicConstraints.PERCEPTRON_HIDDEN_LAYERS),
+    ] = Body(...),
 ) -> Dict[str, Any]:
     try:
         payload = auth_service.token_validate(token)
@@ -100,15 +111,18 @@ def init_new_perceptron(
     }
 
 
-@router.post("/learn/")
+@router.post("/learn")
 def learn_perceptron(
     token: str = Depends(oauth2_scheme),
     project_id: str = Body(...),
     activation_type: ActivationType = Body(...),
     softmax_use: bool = Body(default=False),
     loss_type: LossType = Body(default=LossType.MSE),
-    epochs: int = Body(...),
-    learning_rate: float = Body(...),
+    epochs: Annot[int, ncv(config.PublicConstraints.PERCEPTRON_LEARN_EPOCHS_RANGE)] = Body(...),
+    learning_rate: Annot[
+        float,
+        fcv(config.PublicConstraints.PERCEPTRON_LEARN_LEARNING_RATE_RANGE),
+    ] = Body(...),
 ) -> Dict[str, Any]:
     try:
         payload = auth_service.token_validate(token)
@@ -156,7 +170,10 @@ def learn_perceptron(
 def get_answer(
     token: str = Depends(oauth2_scheme),
     perceptron_id: str = Body(...),
-    input_vector: List[float] = Body(...),
+    input_vector: Annot[
+        List[float],
+        finite_in_vec(config.PublicConstraints.PERCEPTRON_GET_ANSWER_INPUT_VECTOR_MAX_LEN),
+    ] = Body(...),
     activation_type: ActivationType = Body(...),
     softmax_use: bool = Body(default=False),
 ) -> Dict[str, Any]:

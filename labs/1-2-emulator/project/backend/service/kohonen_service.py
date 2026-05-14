@@ -2,6 +2,7 @@ import numpy as np
 import numpy.typing as npt
 
 from lib.kohonen.decreasing import decreasing_linear_rate, decreasing_linear_sigma
+from lib.kohonen.initialization import initialize_som_weights_pca_grid
 from lib.kohonen.normalization import min_max_normalize, normalize_samples_min_max
 from lib.kohonen.neighbour_function import INeighbourFunction
 from lib.kohonen.topologic_distance import ITopologicCalculator
@@ -25,28 +26,39 @@ class KohonenNetworkService:
         self,
         rows: int,
         cols: int,
+        samples: npt.NDArray[np.float64],
         mins: npt.NDArray[np.float64],
         maxs: npt.NDArray[np.float64],
-        input_size: int,
     ) -> npt.NDArray[np.float64]:
-        """Случайные веса ``(rows*cols, input_size)`` в ``[0, 1]`` по каждой компоненте.
+        """Инициализация весов ``(rows*cols, d)`` по выборке в min-max шкале.
 
-        ``mins``/``maxs`` задают ожидаемую размерность ``input_size`` (согласование с
-        :meth:`train` / :meth:`predict`); обучение и инференс выполняются в min-max
-        нормализованном пространстве с теми же границами.
+        Используется линейная PCA-сетка в пространстве
+        :func:`~lib.kohonen.normalization.normalize_samples_min_max` с теми же
+        ``mins``/``maxs``, что и в :meth:`train` / :meth:`predict`. Краевые случаи
+        (одна строка, один признак, вырожденная дисперсия) обрабатываются в
+        :func:`~lib.kohonen.initialization.initialize_som_weights_pca_grid`.
         """
-        if rows <= 0 or cols <= 0 or input_size <= 0:
+        if rows <= 0 or cols <= 0:
+            raise ValueError(f"rows/cols must be > 0: rows={rows}, cols={cols}")
+        x = np.asarray(samples, dtype=np.float64)
+        if x.ndim != 2:
             raise ValueError(
-                f"rows/cols/input_size must be > 0: rows={rows}, cols={cols}, input_size={input_size}"
+                f"samples must be 2D (n_samples, n_features), got shape {x.shape}"
             )
+        if x.shape[0] < 1:
+            raise ValueError("samples must contain at least one row")
+        input_size = x.shape[1]
+        if input_size < 1:
+            raise ValueError("samples must have at least one feature column")
+
         lo = np.asarray(mins, dtype=np.float64).ravel()
         hi = np.asarray(maxs, dtype=np.float64).ravel()
         if lo.size != input_size or hi.size != input_size:
             raise ValueError(
-                f"mins/maxs length must equal input_size={input_size}, "
+                f"mins/maxs length must equal n_features={input_size}, "
                 f"got len(mins)={lo.size}, len(maxs)={hi.size}"
             )
-        return np.random.rand(rows * cols, input_size).astype(np.float64)
+        return initialize_som_weights_pca_grid(x, lo, hi, rows, cols)
 
     def train(
         self,

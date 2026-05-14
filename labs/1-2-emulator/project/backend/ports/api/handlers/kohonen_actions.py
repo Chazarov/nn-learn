@@ -6,16 +6,14 @@ import numpy as np
 import numpy.typing as npt
 from fastapi import APIRouter, Body, Depends, HTTPException
 
-from config import config, num_constraint_validator as ncv
-from lib.kohonen.models.enums import NeighbourhoodFunctionType, TopologyDistanceType
-from lib.kohonen.neighbour_function import (
-    GaussianNEighborhood,
-    INeighbourFunction,
-    MexicanHatNeighborhood,
+from config import (
+    config,
+    finite_input_vector_validator as finite_in_vec,
+    float_constraint_validator as fcv,
+    num_constraint_validator as ncv,
 )
+from lib.kohonen.models.enums import NeighbourhoodFunctionType, TopologyDistanceType
 from lib.kohonen.normalization import min_max_bounds_from_samples, min_max_normalize
-from lib.kohonen.topologic_distance.euclidean import EuclideanTopologicDistance
-from lib.kohonen.topologic_distance.manhattan import ManhattanTopologicDistance
 from lib.kohonen.vector_distance_calculation.euclidean import EuclideanVectorDistanceCalculator
 from models.csv_file import CsvFileData
 from models.progect_nn import (
@@ -25,6 +23,8 @@ from models.progect_nn import (
     ProjectWithData,
     ProjectWithDataWithoutWeights,
 )
+from lib.kohonen.neighbour_function.consts import NEIGHBOURHOOD_FUNCTIONS
+from lib.kohonen.topologic_distance.consts import TOPOLOGY_CALCULATORS
 
 from container import auth_service, csv_service, kohonen_network_service, project_service
 from exceptions.auth_exception import AuthException
@@ -49,22 +49,6 @@ def _map_rows_cols(neurons: int) -> tuple[int, int]:
     return r, r
 
 
-def _neighbourhood(fn: NeighbourhoodFunctionType) -> INeighbourFunction:
-    if fn == NeighbourhoodFunctionType.GAUSSIAN:
-        return GaussianNEighborhood()
-    if fn == NeighbourhoodFunctionType.MEXICAN_HAT:
-        return MexicanHatNeighborhood()
-    raise ValueError(f"unsupported neighbourhood_function: {fn}")
-
-
-def _topology_distance(kind: TopologyDistanceType, cols: int):
-    if kind == TopologyDistanceType.EUCLIDEAN:
-        return EuclideanTopologicDistance(cols=cols)
-    if kind == TopologyDistanceType.MANHATTAN:
-        return ManhattanTopologicDistance(cols=cols)
-    raise ValueError(f"unsupported topology_distance: {kind}")
-
-
 def _learning_rate_end(learning_rate: float) -> float:
     end = learning_rate * 0.1
     end = max(1e-6, min(end, learning_rate * 0.99))
@@ -74,10 +58,17 @@ def _learning_rate_end(learning_rate: float) -> float:
 
 
 def _sigma_end(sigma_start: float) -> float:
-    end = sigma_start * 0.25
-    end = max(1e-6, min(end, sigma_start * 0.99))
+    """Конечное σ для линейного расписания; строго меньше ``sigma_start`` (см. ``decreasing_linear_sigma``)."""
+    if sigma_start <= 0:
+        return 1e-9
+    end = min(sigma_start * 0.25, sigma_start * 0.99)
+    # Не поднимать пол ниже пропорции от sigma_start, иначе при малых σ получится end >= sigma_start.
+    floor = min(1e-6, sigma_start * 0.01)
+    end = max(floor, end)
     if end >= sigma_start:
-        end = max(1e-6, sigma_start * 0.5)
+        end = sigma_start * 0.5
+    if end >= sigma_start:
+        end = sigma_start * 0.01
     return float(end)
 
 
@@ -89,7 +80,10 @@ def _weights_matrix(nn_data: NNData) -> npt.NDArray[np.float64]:
 def init_new_kohonen_network(
     token: str = Depends(oauth2_scheme),
     file_id: str = Body(...),
-    input_layer_size: Annot[int,ncv(config.PublicConstraints.KOHONEN_INPUT_LAYER_SIZE_RANGE),] = Body(...),
+    input_layer_size: Annot[
+        int,
+        ncv(config.PublicConstraints.KOHONEN_INPUT_LAYER_SIZE_RANGE),
+    ] = Body(...),
     output_layer_size: Annot[
         int,
         ncv(config.PublicConstraints.KOHONEN_OUTPUT_LAYER_SIZE_RANGE),
@@ -108,6 +102,8 @@ def init_new_kohonen_network(
         raise HTTPException(status_code=500, detail="Internal server error")
 
     try:
+        if not data.rows:
+            raise HTTPException(status_code=400, detail="CSV contains no data rows")
         feature_dim = len(data.rows[0].signs_vector)
         if feature_dim != input_layer_size:
             raise HTTPException(
@@ -122,9 +118,9 @@ def init_new_kohonen_network(
         weights = kohonen_network_service.init_network(
             rows,
             cols,
+            samples,
             mins,
             maxs,
-            feature_dim,
         )
         nn_data = NNData(
             weights=[weights.tolist()],
@@ -189,13 +185,19 @@ def init_new_kohonen_network(
     }
 
 
-@router.post("/learn/")
+@router.post("/learn")
 def learn_kohonen_network(
     token: str = Depends(oauth2_scheme),
     project_id: str = Body(...),
-    epochs: int = Body(...),
-    learning_rate: float = Body(...),
-    initial_neighborhood_radius: float = Body(...),
+    epochs: Annot[int, ncv(config.PublicConstraints.KOHONEN_LEARN_EPOCHS_RANGE)] = Body(...),
+    learning_rate: Annot[
+        float,
+        fcv(config.PublicConstraints.KOHONEN_LEARN_LEARNING_RATE_RANGE),
+    ] = Body(...),
+    initial_neighborhood_radius: Annot[
+        float,
+        fcv(config.PublicConstraints.KOHONEN_INITIAL_NEIGHBORHOOD_RADIUS_RANGE),
+    ] = Body(...),
     neighbourhood_function: NeighbourhoodFunctionType = Body(...),
     topology_distance: TopologyDistanceType = Body(...),
 ) -> Dict[str, Any]:
@@ -215,19 +217,27 @@ def learn_kohonen_network(
         raise HTTPException(status_code=500, detail="Internal server error")
 
     try:
-        if epochs < 1:
-            raise HTTPException(status_code=400, detail="epochs must be >= 1")
-
         weights = _weights_matrix(p.nn_data)
         n_neurons = weights.shape[0]
         rows, cols = _map_rows_cols(n_neurons)
 
         samples = _csv_rows_to_matrix(samples_data)
+        if samples.shape[0] == 0:
+            raise HTTPException(status_code=400, detail="CSV contains no data rows")
+        if samples.shape[1] != p.nn_data.input_size:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"CSV feature count {samples.shape[1]} does not match "
+                    f"project input_size {p.nn_data.input_size}"
+                ),
+            )
+
         mins = np.asarray(p.nn_data.mins, dtype=np.float64)
         maxs = np.asarray(p.nn_data.maxs, dtype=np.float64)
 
-        nf = _neighbourhood(neighbourhood_function)
-        topo = _topology_distance(topology_distance, cols=cols)
+        nf = NEIGHBOURHOOD_FUNCTIONS[neighbourhood_function.value]()
+        topo = TOPOLOGY_CALCULATORS[topology_distance.value](cols=cols)
         vec = EuclideanVectorDistanceCalculator()
 
         lr_end = _learning_rate_end(learning_rate)
@@ -295,7 +305,10 @@ def learn_kohonen_network(
 def get_answer_kohonen(
     token: str = Depends(oauth2_scheme),
     project_id: str = Body(...),
-    input_vector: List[float] = Body(...),
+    input_vector: Annot[
+        List[float],
+        finite_in_vec(config.PublicConstraints.KOHONEN_GET_ANSWER_INPUT_VECTOR_MAX_LEN),
+    ] = Body(...),
 ) -> Dict[str, Any]:
     try:
         payload = auth_service.token_validate(token)

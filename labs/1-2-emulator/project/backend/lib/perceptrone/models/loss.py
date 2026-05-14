@@ -1,7 +1,7 @@
 
 
 from abc import ABC, abstractmethod
-from ast import List
+from typing import List
 from enum import Enum
 
 

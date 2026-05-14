@@ -1,7 +1,5 @@
-from ast import Dict
-from typing import Type
-import numpy.typing as npt
 import numpy as np
+import numpy.typing as npt
 
 from lib.kohonen.neighbour_function.base import INeighbourFunction
 from lib.kohonen.models.enums import NeighbourhoodFunctionType
