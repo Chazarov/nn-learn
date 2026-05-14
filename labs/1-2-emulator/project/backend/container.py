@@ -2,6 +2,7 @@ from service.projects_service import ProjectsService
 from service.auth_service import AuthService
 from service.csv_service import CsvService
 from service.nn_service import NNService
+from service.kohonen_service import KohonenNetworkService
 
 from exceptions.not_found import NotFoundException 
 
@@ -37,3 +38,4 @@ auth_service = AuthService(user_repository=_user_repository,
                            jwt_expires_seconds=config.JWT_EXPIRES_AT)
 csv_service = CsvService(disk_repo=_csv_disk_repo, relative_repo=_csv_relative_repo)
 nn_service = NNService()
+kohonen_network_service = KohonenNetworkService()

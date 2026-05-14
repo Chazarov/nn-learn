@@ -3,7 +3,7 @@ from typing import List
 import numpy.typing as npt
 import numpy as np
 
-from models.progect_nn import Project, NNData, ProjectWithData
+from models.progect_nn import Project, NNData, ProjectWithData, ProjectType
 from repository.image_disk_repository import ImageRepository
 from repository.weights_disk_repository import WeightsDiskRepository
 from repository.projects_postgres_repository import ProjectsRepository
@@ -21,9 +21,17 @@ class ProjectsService:
         self.weights_disk_repository = weights_disk_repository
         self.projects_repository = projects_repository
 
-    def create(self, user_id: str, nn_data: NNData, csv_file_id: str) -> Project:
+    def create(
+        self,
+        user_id: str,
+        nn_data: NNData,
+        csv_file_id: str,
+        project_type: ProjectType = ProjectType.PERCEPTRON,
+    ) -> Project:
         try:
-            project: Project = self.projects_repository.create(user_id, csv_file_id)
+            project: Project = self.projects_repository.create(
+                user_id, csv_file_id, project_type=project_type
+            )
         except DomainException:
             raise
         except Exception as e:
@@ -65,6 +73,7 @@ class ProjectsService:
 
         return ProjectWithData(
             id=project_info.id,
+            project_type=project_info.project_type,
             user_id=user_id,
             created_at=project_info.created_at,
             csv_file_id=project_info.csv_file_id,
@@ -102,12 +111,21 @@ class ProjectsService:
     def get_projects(self, user_id: str) -> List[Project]:
         return self.projects_repository.get_all(user_id)
 
-    def get_image(self, project_id: str, user_id: str) -> str:
-        self.get_project(user_id, project_id)
-        return self.image_repository.get_image(project_id)
+    def get_image(self, user_id: str, image_id: str) -> str:
+        base_project_id = image_id.split("__", 1)[0]
+        self.get_project(user_id, base_project_id)
+        return self.image_repository.get_image(image_id)
 
-    def save_image(self, user_id: str, project_id: str, image: npt.NDArray[np.uint8]) -> str:
-        return self.image_repository.save_image(project_id, image)
+    def save_image(
+        self,
+        user_id: str,
+        project_id: str,
+        image: npt.NDArray[np.uint8],
+        image_suffix: str | None = None,
+    ) -> str:
+        self.get_project(user_id, project_id)
+        image_id = f"{project_id}__{image_suffix}" if image_suffix else project_id
+        return self.image_repository.save_image(image_id, image)
 
     def delete_project(self, user_id: str, project_id: str):
         try:

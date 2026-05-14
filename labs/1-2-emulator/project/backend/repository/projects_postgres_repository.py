@@ -3,7 +3,7 @@ from typing import List
 
 from sqlalchemy.orm import Session, sessionmaker
 
-from models.progect_nn import Project
+from models.progect_nn import Project, ProjectType
 from models.db_models import ProjectDB
 from exceptions.not_found import NotFoundException
 from exceptions.internal_server_exception import InternalServerException
@@ -16,15 +16,24 @@ class ProjectsRepository:
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self.session_factory = session_factory
 
-    def create(self, user_id: str, csv_file_id: str) -> Project:
+    def create(self, user_id: str, csv_file_id: str, project_type: ProjectType) -> Project:
         try:
             with self.session_factory() as session:
-                db_project = ProjectDB(user_id=user_id, csv_file_id=csv_file_id)
+                db_project = ProjectDB(
+                    user_id=user_id,
+                    csv_file_id=csv_file_id,
+                    project_type=project_type,
+                )
                 session.add(db_project)
                 session.commit()
                 session.refresh(db_project)
-                return Project(id=db_project.id, user_id=db_project.user_id,
-                               created_at=db_project.created_at, csv_file_id=db_project.csv_file_id)
+                return Project(
+                    id=db_project.id,
+                    project_type=db_project.project_type,
+                    user_id=db_project.user_id,
+                    created_at=db_project.created_at,
+                    csv_file_id=db_project.csv_file_id,
+                )
         except DomainException:
             raise
         except Exception as e:
@@ -57,8 +66,13 @@ class ProjectsRepository:
                 ).first()
                 if row is None:
                     raise NotFoundException(f"Project '{id}' not found")
-                return Project(id=row.id, user_id=row.user_id,
-                               created_at=row.created_at, csv_file_id=row.csv_file_id)
+                return Project(
+                    id=row.id,
+                    project_type=row.project_type,
+                    user_id=row.user_id,
+                    created_at=row.created_at,
+                    csv_file_id=row.csv_file_id,
+                )
         except DomainException:
             raise
         except Exception as e:
@@ -70,8 +84,13 @@ class ProjectsRepository:
         try:
             with self.session_factory() as session:
                 rows = session.query(ProjectDB).filter(ProjectDB.user_id == user_id).all()
-                return [Project(id=r.id, user_id=r.user_id,
-                                created_at=r.created_at, csv_file_id=r.csv_file_id) for r in rows]
+                return [Project(
+                    id=r.id,
+                    project_type=r.project_type,
+                    user_id=r.user_id,
+                    created_at=r.created_at,
+                    csv_file_id=r.csv_file_id,
+                ) for r in rows]
         except DomainException:
             raise
         except Exception as e:

@@ -7,7 +7,13 @@ from lib.perceptrone.models.activation import ActivationType
 from lib.perceptrone.loss import LossType
 from lib.perceptrone.mathh.models import Sample
 from models.csv_file import CsvFileData
-from models.progect_nn import NNData, NNDataWithoutWeights, ProjectWithData, ProjectWithDataWithoutWeights
+from models.progect_nn import (
+    NNData,
+    NNDataWithoutWeights,
+    ProjectType,
+    ProjectWithData,
+    ProjectWithDataWithoutWeights,
+)
 
 from container import csv_service, auth_service, project_service, nn_service
 from exceptions.auth_exception import AuthException
@@ -62,7 +68,12 @@ def init_new_perceptron(
         )
         img = nn_service.get_visualisation(weights)
 
-        project = project_service.create(payload.user_id, nn_data=nn_data, csv_file_id=file_id)
+        project = project_service.create(
+            payload.user_id,
+            nn_data=nn_data,
+            csv_file_id=file_id,
+            project_type=ProjectType.PERCEPTRON,
+        )
         image_id = project_service.save_image(payload.user_id, project.id, img)
     except DomainException as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -72,16 +83,19 @@ def init_new_perceptron(
         raise HTTPException(status_code=500, detail="Internal server error")
 
     return {
-        "project": ProjectWithDataWithoutWeights(id = project.id, 
-                                   user_id = payload.user_id, 
-                                   created_at=project.created_at,
-                                   csv_file_id=file_id,
-                                   nn_data=NNDataWithoutWeights(input_size=nn_data.input_size,
-                                                  mins=nn_data.mins,
-                                                  maxs=nn_data.maxs,
-                                                  classes=nn_data.classes),
-                                                  
-                                                  ),
+        "project": ProjectWithDataWithoutWeights(
+            id=project.id,
+            project_type=ProjectType.PERCEPTRON,
+            user_id=payload.user_id,
+            created_at=project.created_at,
+            csv_file_id=file_id,
+            nn_data=NNDataWithoutWeights(
+                input_size=nn_data.input_size,
+                mins=nn_data.mins,
+                maxs=nn_data.maxs,
+                classes=nn_data.classes,
+            ),
+        ),
         "image_id": image_id,
     }
 

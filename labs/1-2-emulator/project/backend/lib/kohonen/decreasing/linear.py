@@ -45,3 +45,28 @@ def decreasing_linear_rate(
         raise ArgumentException(e_str)
 
     return _linear_schedule(step_index, total_steps, rate_start, rate_end)
+
+
+def decreasing_linear_sigma(
+    step_index: int,
+    total_steps: int,
+    sigma_start: float,
+    sigma_end: float,
+) -> float:
+    """
+    Линейно убывающее расписание ``sigma`` для функции соседства (та же сетка шагов,
+    что и у :func:`decreasing_linear_rate`).
+    """
+    if total_steps < 1:
+        e_str = f"total_steps must be >= 1, got {total_steps}"
+        logger.error(e_str)
+        raise ArgumentException(e_str)
+    if sigma_end <= 0.0 or sigma_start <= sigma_end:
+        e_str = (
+            f"sigma_start and sigma_end must satisfy 0 < sigma_end < sigma_start, "
+            f"got sigma_start={sigma_start}, sigma_end={sigma_end}"
+        )
+        logger.error(e_str)
+        raise ArgumentException(e_str)
+
+    return _linear_schedule(step_index, total_steps, sigma_start, sigma_end)

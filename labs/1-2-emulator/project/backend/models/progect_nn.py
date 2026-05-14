@@ -9,6 +9,7 @@ class ProjectType(str, Enum):
 
 
 class Project(BaseModel):
+    id: str
     project_type: ProjectType
     user_id: str
     created_at: int

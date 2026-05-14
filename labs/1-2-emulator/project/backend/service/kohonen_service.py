@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 
-from lib.kohonen.decreasing import decreasing_linear_rate
+from lib.kohonen.decreasing import decreasing_linear_rate, decreasing_linear_sigma
 from lib.kohonen.normalization import min_max_normalize, normalize_samples_min_max
 from lib.kohonen.neighbour_function import INeighbourFunction
 from lib.kohonen.topologic_distance import ITopologicCalculator

@@ -1,25 +1,10 @@
-from abc import ABC, abstractmethod
-from enum import Enum
 from typing import Any, Dict, List
 import math
 
 from exceptions import ArgumentException
 from log import logger
 
-
-
-class LossType(str, Enum):
-    MSE = "MSE"
-    CROSS_ENTROPY = "CROSS_ENTROPY"
-
-    
-
-class ILoss(ABC):
-    @abstractmethod
-    def perform(self, expected:List[float], outputs: List[float]) -> float: pass
-
-    @abstractmethod
-    def get_type(self) -> LossType: pass
+from lib.perceptrone.models.loss import ILoss, LossType
 
 
 class MSE(ILoss):

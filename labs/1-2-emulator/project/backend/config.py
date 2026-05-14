@@ -63,12 +63,10 @@ class Config:
 
         ## Kohonen constraints:
         KOHONEN_OUTPUT_LAYER_SIZE_RANGE = NumConstraint(
-            name="KOHONEN_OUTPUT_LAYER_SIZE_RANGE",
             allowed_values=[4, 9, 16, 25, 36, 49],
         )
 
         KOHONEN_INPUT_LAYER_SIZE_RANGE = NumConstraint(
-            name="KOHONEN_INPUT_LAYER_SIZE_RANGE",
             min_value=1,
             max_value=20,
         )

@@ -25,7 +25,7 @@ async def get_image(image_id: str = Path(),
         raise HTTPException(status_code=401, detail=str(e))
 
     try:
-        path: str = project_service.get_image(project_id=image_id, user_id=payload.user_id)
+        path: str = project_service.get_image(user_id=payload.user_id, image_id=image_id)
     except NotFoundException as e:
         raise HTTPException(status_code=404, detail=str(e))
     except InternalServerException:

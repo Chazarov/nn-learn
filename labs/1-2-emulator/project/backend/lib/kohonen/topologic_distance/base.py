@@ -5,6 +5,7 @@ import numpy.typing as npt
 import numpy as np
 
 
+
 class ITopologicCalculator(ABC):
     """Топологическое расстояние на 2D-решётке m×n.
 
@@ -33,3 +34,6 @@ class ITopologicCalculator(ABC):
     def perform(
         self, winner_idx: int, neurons_count: int
     ) -> npt.NDArray[np.float64]: ...
+
+    @abstractmethod
+    def get_type(self)-> str: pass
