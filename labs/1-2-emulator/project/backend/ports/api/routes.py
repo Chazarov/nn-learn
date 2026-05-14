@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from ports.api.handlers.perceptron_actions import router as p_actions_router
 from ports.api.handlers.kohonen_actions import router as kohonen_actions_router
+from ports.api.handlers.projects import router as projects_router
 from ports.api.handlers.images import router as images_router
 from ports.api.handlers.csv_files import router as csv_router
 from ports.api.handlers.auth import router as auth_router
@@ -18,6 +19,7 @@ main_router.include_router(
     tags=["public-constraints"],
 )
 main_router.include_router(auth_router, prefix="/auth", tags=["auth"])
+main_router.include_router(projects_router, prefix="/actions", tags=["projects"])
 main_router.include_router(p_actions_router, prefix="/actions/perceptron", tags=["actions"])
 main_router.include_router(
     kohonen_actions_router, prefix="/actions/kohonen", tags=["kohonen"]
