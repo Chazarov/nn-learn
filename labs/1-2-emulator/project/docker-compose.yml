@@ -26,11 +26,11 @@ services:
       retries: 10
 
   mlp:
-    build: ./simple_emulator
+    build: ./backend
     # ports:
     #   - "8000:8000"
     env_file:
-      - ./simple_emulator/.env
+      - ./.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/perceptron_db
       REDIS_URL: redis://redis:6379/0
@@ -43,10 +43,10 @@ services:
         condition: service_healthy
 
   worker:
-    build: ./simple_emulator
+    build: ./backend
     command: celery -A celery_app worker --loglevel=info
     env_file:
-      - ./simple_emulator/.env
+      - ./.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/perceptron_db
       REDIS_URL: redis://redis:6379/0
@@ -63,13 +63,13 @@ services:
 
   frontend:
     build: ./frontend
-    # ports:
-    #   - "3000:80"
+    ports:
+      - "3000:80"
     depends_on:
       - mlp
     networks:
       - default
-      - caddy_net
+      # - caddy_net
     container_name: nnemulator_frontend
 
 volumes:
@@ -77,6 +77,6 @@ volumes:
   mlp_data:
 
 
-networks:
-  caddy_net:
-    external: true
+# networks:
+#   caddy_net:
+#     external: true
