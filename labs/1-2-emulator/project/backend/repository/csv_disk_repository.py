@@ -1,9 +1,38 @@
 import csv
 import os
-from typing import List
+from typing import List, Optional, Sequence, Tuple
 
+from exceptions.domain import DomainException
 from exceptions.not_found import NotFoundException
 from models.csv_file import CsvFileData, SampleModel
+
+
+def _non_empty_fieldnames(fieldnames: Optional[Sequence[str]]) -> List[str]:
+    """Порядок ключей DictReader без пустых имён (часто из‑за лишней запятой в заголовке Excel)."""
+    out: List[str] = []
+    for raw in fieldnames or []:
+        if raw is None:
+            continue
+        if not str(raw).strip():
+            continue
+        out.append(str(raw))
+    return out
+
+
+def _feature_and_label_keys(fieldnames: Optional[Sequence[str]]) -> Tuple[List[str], str]:
+    """Формат: ``номер_примера, признак1, …, признакK, метка`` — первая колонка не признак, метка всегда последняя."""
+    keys = _non_empty_fieldnames(fieldnames)
+    if len(keys) < 3:
+        raise DomainException(
+            "В CSV нужно минимум три колонки: номер примера, хотя бы один признак и метка в последней колонке",
+        )
+    label_key = keys[-1]
+    feature_keys = keys[1:-1]
+    if not feature_keys:
+        raise DomainException(
+            "Нет колонок признаков между номером примера и меткой класса",
+        )
+    return feature_keys, label_key
 
 
 class CsvDiskRepository:
@@ -39,24 +68,29 @@ class CsvDiskRepository:
         rows: List[SampleModel] = []
         classes: List[str] = []
 
-        with open(path, newline="") as f:
+        with open(path, newline="", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
-            columns: List[str] = list(reader.fieldnames or [])
-            feature_cols = columns[1:-1]
-            label_col = columns[-1]
+            fieldnames = reader.fieldnames
+            raw_dict_rows: List[dict] = list(reader)
 
-            for row in reader:
-                label = str(row[label_col])
-                if label not in classes:
-                    classes.append(label)
+        feature_cols, label_col = _feature_and_label_keys(fieldnames)
 
-        with open(path, newline="") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                x: List[float] = [float(row[c]) for c in feature_cols]
-                label_idx = classes.index(str(row[label_col]))
-                y: List[float] = [1.0 if i == label_idx else 0.0 for i in range(len(classes))]
-                rows.append(SampleModel(signs_vector=x, class_mark=y))
+        for row in raw_dict_rows:
+            label = str(row[label_col])
+            if label not in classes:
+                classes.append(label)
+
+        for row in raw_dict_rows:
+            try:
+                x = [float(row[c]) for c in feature_cols]
+            except (TypeError, ValueError) as e:
+                raise DomainException(
+                    "Ожидаются числовые значения во всех колонках признаков; "
+                    f"проверьте строку и заголовки ({e})",
+                ) from e
+            label_idx = classes.index(str(row[label_col]))
+            y: List[float] = [1.0 if i == label_idx else 0.0 for i in range(len(classes))]
+            rows.append(SampleModel(signs_vector=x, class_mark=y))
 
         return CsvFileData(rows=rows, classes=classes)
     

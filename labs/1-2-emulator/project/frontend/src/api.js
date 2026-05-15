@@ -15,6 +15,12 @@ async function handleResponse(res) {
   return data;
 }
 
+/** Публичные ограничения полей (синхронно с валидацией на backend). */
+export async function getPublicConstraints() {
+  const res = await fetch(`${BASE}/public-constraints`);
+  return handleResponse(res);
+}
+
 export async function signUp(email, name, password) {
   const res = await fetch(`${BASE}/auth/sign-up`, {
     method: "POST",
@@ -56,7 +62,7 @@ export async function getProjectData(token, projectId) {
 }
 
 export async function initPerceptron(token, fileId, hiddenLayersArchitecture) {
-  const res = await fetch(`${BASE}/actions/init`, {
+  const res = await fetch(`${BASE}/actions/perceptron/init`, {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({
@@ -67,11 +73,24 @@ export async function initPerceptron(token, fileId, hiddenLayersArchitecture) {
   return handleResponse(res);
 }
 
+export async function initKohonen(token, fileId, inputLayerSize, outputLayerSize) {
+  const res = await fetch(`${BASE}/actions/kohonen/init`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({
+      file_id: fileId,
+      input_layer_size: inputLayerSize,
+      output_layer_size: outputLayerSize,
+    }),
+  });
+  return handleResponse(res);
+}
+
 export function learnPerceptronWS(token, params, onMessage) {
   return new Promise((resolve, reject) => {
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(
-      `${proto}//${location.host}/api/ws/learn?token=${token}`,
+      `${proto}//${location.host}/api/ws/learn?token=${encodeURIComponent(token)}`,
     );
     ws.onopen = () => ws.send(JSON.stringify(params));
     ws.onmessage = (e) => {
@@ -84,19 +103,42 @@ export function learnPerceptronWS(token, params, onMessage) {
   });
 }
 
-export async function getAnswer(
+export async function learnKohonen(token, body) {
+  const res = await fetch(`${BASE}/actions/kohonen/learn`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  });
+  return handleResponse(res);
+}
+
+export async function getAnswerPerceptron(
   token,
   perceptronId,
   inputVector,
   activationType,
+  softmaxUse = false,
 ) {
-  const res = await fetch(`${BASE}/actions/get_answer`, {
+  const res = await fetch(`${BASE}/actions/perceptron/get_answer`, {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({
       perceptron_id: perceptronId,
       input_vector: inputVector,
       activation_type: activationType,
+      softmax_use: softmaxUse,
+    }),
+  });
+  return handleResponse(res);
+}
+
+export async function getAnswerKohonen(token, projectId, inputVector) {
+  const res = await fetch(`${BASE}/actions/kohonen/get_answer`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({
+      project_id: projectId,
+      input_vector: inputVector,
     }),
   });
   return handleResponse(res);
