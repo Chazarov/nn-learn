@@ -63,7 +63,7 @@ services:
 
   frontend:
     build: ./frontend
-    ports:
+    # ports:
       # - "3000:80"
     depends_on:
       - mlp
