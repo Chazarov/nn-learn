@@ -700,7 +700,7 @@ export default function MainPage({ token, onLogout }) {
               </div>
 
               <button className="big-btn" onClick={handleCreatePerceptron} disabled={loading}>
-                Создать перцептрон
+                Create perceptron
               </button>
               <button type="button" className="text-btn" onClick={() => setCreateFlow(null)}>
                 Назад
@@ -813,7 +813,7 @@ export default function MainPage({ token, onLogout }) {
                 </div>
               </div>
               <button className="big-btn train" onClick={handleCreateKohonen} disabled={loading}>
-                Создать Кохонена
+                Create SOM
               </button>
               <button type="button" className="text-btn" onClick={() => setCreateFlow(null)}>
                 Назад
