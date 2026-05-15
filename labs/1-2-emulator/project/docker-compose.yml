@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: perceptron_db
     ports:
-      - "5432:5432"
+      # - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -64,7 +64,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"
+      # - "3000:80"
     depends_on:
       - mlp
     networks:
